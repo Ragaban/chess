@@ -4,43 +4,43 @@ class Piece:
         #self.pos = pos
 
     def __repr__(self):
-        return self.name + self.color
+        return self.color + self.name[0] 
 
     def move(self):
         pass
 
 class King(Piece):
-    name = "K"
+    name = "King"
 
 class Queen(Piece):
-    name = "Q"
+    name = "Queen"
 
 class Bishop(Piece):
-    name = "B"
+    name = "Bishop"
 
 class Knight(Piece):
-    name = "G"
+    name = "Knight"
+    def __repr__(self):
+        return self.color + "N"
 
-class Rooke(Piece):
-    name = "R"
+class Rook(Piece):
+    name = "Rook"
 
 class Pawn(Piece):
-    name = "P"
+    name = "Pawn"
 
 
 chess_board = [
     #a b c d e f g h
-    [Rooke('b'), Knight('b'), Bishop('b'), Queen('b'), King('b'), Bishop('b'), Knight('b'), Rooke('b')],    # 8
+    [Rook('b'), Knight('b'), Bishop('b'), Queen('b'), King('b'), Bishop('b'), Knight('b'), Rook('b')],    # 8
     [Pawn('b'), Pawn('b'), Pawn('b'), Pawn('b'), Pawn('b'), Pawn('b'), Pawn('b'), Pawn('b')],               # 7
     ['<>','<>','<>','<>','<>','<>','<>','<>'],                                                              # 6
     ['<>','<>','<>','<>','<>','<>','<>','<>'],                                                              # 5
     ['<>','<>','<>','<>','<>','<>','<>','<>'],                                                              # 4
     ['<>','<>','<>','<>','<>','<>','<>','<>'],                                                              # 3
     [Pawn('w'), Pawn('w'), Pawn('w'), Pawn('w'), Pawn('w'), Pawn('w'), Pawn('w'), Pawn('w')],               # 2
-    [Rooke('w'), Knight('w'), Bishop('w'), Queen('w'), King('w'), Bishop('w'), Knight('w'), Rooke('w')],    # 1
+    [Rook('w'), Knight('w'), Bishop('w'), Queen('w'), King('w'), Bishop('w'), Knight('w'), Rook('w')],    # 1
 ]
-
-
 
 def draw_board(board):
     print( ' A  B  C  D  E  F  G  H')
@@ -52,25 +52,52 @@ def draw_board(board):
                 print(' ' + str(row_num))
                 row_num -= 1
 
+def convert_to_chess_index(board_pos: str) -> tuple:
+    """ turn chess indices to list board indices"""
+    x, y = board_pos[0], int(board_pos[1]) # x y = 'D5'
+    match x.lower():
+        case 'a': x = 0
+        case 'b': x = 1
+        case 'c': x = 2
+        case 'd': x = 3
+        case 'e': x = 4
+        case 'f': x = 5
+        case 'g': x = 6
+        case 'h': x = 7
+
+    # f(x) = -1 * x + 8
+    y = -1 * y + 8
+    return x,y
+    
 
 
-def convert_to_chess_index():
-    """ turn list indices to chess board indices"""
+
+def move():
     pass
 
-
 def main():
-    player_turn = True # True = P1 False = P2
-    
+    player_turn = True 
+    p1= 'w'
+    p2= 'b'
     while True:
+        # player chooses color
         draw_board(chess_board)
         selected_piece = input(': ' )
+        selected_piece_idx = convert_to_chess_index(selected_piece)
+        # check if piece is valid 
+
+        # check where piece can move 
+        # give options where to move
+        # check if move was valid
+        # check if new pos is occupied
+        # move piece
 
 
         
-        
+        # check for win
         if player_turn: player_turn = False
         else: player_turn = True
+        
         break
 
 main()
