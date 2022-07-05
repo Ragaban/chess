@@ -1,4 +1,4 @@
-import classes.py
+from .classes import Piece, King, Queen, Bishop, Knight, Rook, Pawn
 import PySimpleGUI as sg
 
 layout = [[]]
