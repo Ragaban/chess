@@ -42,10 +42,14 @@ chess_board = [
     [Rook('w'), Knight('w'), Bishop('w'), Queen('w'), King('w'), Bishop('w'), Knight('w'), Rook('w')],    # 1
 ]
 
+padding = '\t\t'
+
+
 def draw_board(board):
-    print( ' A  B  C  D  E  F  G  H')
+    print( padding + ' A  B  C  D  E  F  G  H')
     row_num = 8
     for row in board:
+        print(padding)
         for idx, item in enumerate(row):
             print(item, end=' ')
             if len(row) - idx == 1:
@@ -67,7 +71,7 @@ def convert_to_chess_index(board_pos: str) -> tuple:
 
     # f(x) = -1 * x + 8
     y = -1 * y + 8
-    return x,y
+    return x, y
     
 
 
@@ -76,15 +80,27 @@ def move():
     pass
 
 def main():
-    player_turn = True 
-    p1= 'w'
-    p2= 'b'
-    while True:
-        # player chooses color
+
+    while True: # main-game loop
         draw_board(chess_board)
-        selected_piece = input(': ' )
-        selected_piece_idx = convert_to_chess_index(selected_piece)
-        # check if piece is valid 
+        turn = 1 # odd turns white & even turns black
+
+        while True: # Player Turn
+            
+            if turn % 2 == 1: current_player = 'White'
+            else: current_player = 'Black'
+            
+            selected_piece = input(f"{current_player}'s Turn: " ) # TODO: Input validation
+            x, y = convert_to_chess_index(selected_piece)
+            piece = chess_board[y][x]
+            if piece != '<>' and piece.color == current_player[0].lower(): # first check for empty space '<>'
+                print('valid') # DEBUG
+                move()
+            else:
+                print('invalid') # DEBUG
+                continue 
+            
+            turn += 1
 
         # check where piece can move 
         # give options where to move
@@ -95,8 +111,6 @@ def main():
 
         
         # check for win
-        if player_turn: player_turn = False
-        else: player_turn = True
         
         break
 
