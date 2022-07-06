@@ -53,16 +53,26 @@ def convert_to_chess_index(board_pos: str) -> tuple:
     y = -1 * board_y + 8
     return x, y
     
-def check_move_legality(newX, newY, piece, board):
-    # TODO: dont know how to check all
-    oldX, oldY = piece.posx, piece.posy
-    if oldX == newX and oldY == newY:
-        False
-    if oldX+1 == newX and oldY == newY and board[newY][newX] == '<>' and board[newY][newX].color != piece.color:
-        if isinstance(board[newY][newX], Piece):
-            board[newY][newX] = board[oldY][oldY]
-        else: 
-            board[newY][newX], board[oldY][oldX] = board[oldY][oldX], board[newY][newX]
+def check_move_legality(newpos, piece : Piece, board) -> bool:
+    new_x, new_y = newpos
+    old_x, old_y = piece.pos 
+    for i, dir in enumerate(piece.pos):
+        xrange = piece.range - old_x
+        yrange = piece.range - old_y
+        #(1, 1), (-1, 1), (1, -1), (-1, -1) Bishop
+        for num in range(1, piece.range +1):
+            x, y = dir # e.g dir = (1, 1)
+            xdir, ydir = x * num, y * num
+
+
+            if isinstance(board[old_y + ydir][old_x + xdir], Piece) and board[old_y + ydir][old_x + xdir] != board[new_y][new_x]:
+                #if tested space is a Piece AND tested space IS NOT destination MEANS BLOCKED WAY
+                break
+
+            if board[old_y + ydir][old_x + xdir] == board[new_y][new_x]:
+                return True
+
+    return False
 
 def main():
     current_board = get_start_board()
@@ -71,19 +81,23 @@ def main():
         turn = 1 # odd turns white & even turns black
         while True: # Player Turn actual main loop
             draw_board(current_board)
-
             if turn % 2 == 1: current_player = 'White' 
             else: current_player = 'Black'
             
-            x,y = convert_to_chess_index(input(f"{current_player}'s Turn: " )) # TODO: Input validation
+            selected_field = input(f"{current_player}'s Turn: " ) # TODO: Input validation
+            x,y = oldpos = convert_to_chess_index(selected_field) 
             piece : Piece = current_board[y][x]
 
             if piece == '<>' or piece.color != current_player[0].lower():
                 print('invalid target') # DEBUG
                 continue
 
-            desti_x, desti_y = convert_to_chess_index(input(f'Where to move: '))
-            if not check_move_legality(desti_x, desti_y, piece, current_board):
+            destination = input(f'Where to move: ') # TODO: Input validation
+            if destination == selected_field: 
+                continue
+            newpos = convert_to_chess_index(destination)
+            
+            if not check_move_legality(newpos, piece, current_board):
                 continue
 
             turn += 1
