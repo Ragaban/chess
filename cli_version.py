@@ -1,3 +1,5 @@
+from locale import normalize
+from shutil import move
 from classes import Piece, King, Queen, Bishop, Knight, Rook, Pawn
 
 # vars
@@ -37,8 +39,8 @@ def draw_board(board):
                 print(' ' + str(row_num))
                 row_num -= 1
 
-def convert_to_chess_index(board_pos: str) -> tuple:  
-    """Returns -> y, x"""
+def chess_idx_to_lst(board_pos: str) -> tuple:  
+    """Returns -> list index y, x"""
     board_y, board_x =  int(board_pos[1]), board_pos[0]
     match board_x.lower():
         case 'a': x = 0
@@ -50,59 +52,115 @@ def convert_to_chess_index(board_pos: str) -> tuple:
         case 'g': x = 6
         case 'h': x = 7
 
-    # this func turns chess board index to lst index
+    # this func turns chess board y index to lst y index
     y = -1 * board_y + 8
     print(f'{board_pos} | ({y}, {x})') # DEBUG: 
     return y, x
     
-def move_valid(oldpos, newpos, board) -> bool:
-    oy, ox  = oldpos
-    ny, nx = newpos
-    piece = board[oy][ox]
+def lst_idx_to_chess(idx):
+    lst_y, lst_x = idx
+    match lst_x:
+        case 0: x = 'a'
+        case 1: x = 'b'
+        case 2: x = 'c'
+        case 3: x = 'd'
+        case 4: x = 'e'
+        case 5: x = 'f'
+        case 6: x = 'g'
+        case 7: x = 'h'
 
+    y = 8 - lst_y
+    return y, x
+
+def check_colinearity(piece : Piece, oy: int, ox: int, ny: int, nx: int) -> bool:
+    """
+    checks if one vector in piece.vec is colinear to the vector of point piece to point destination.
+    PS: Ask EYDEE how he would do this function. Problem: dont want to use cls method active_move to pseudo return vec
+    """
+    # TODO: Implement Knight moveset
     if hasattr(piece, "jumps"):
-        print("Knight move check not implemented yet")
-        return False
-    if oldpos == newpos: 
-        return False
-    #breakpoint()
-
-    ## directions k = (0, 1) and v = bool. If v is untrue this way is blocked and skipped
-    directions = {}
-    for item in piece.dir:
-        directions.setdefault(item, True)
-    
-    for stp in range(1, piece.range+1):
-        for dir in directions:
-            if directions[dir] == False:
-                continue
-            ydir, xdir = dir[0], dir[1]
-
-
-            try_y, try_x = oy + (ydir*stp), ox + (xdir*stp)
-            
-            # dont check for negative because then it wraps around the list
-            if try_y < 0 or try_x < 0:
-                continue
-            
-            try: # cant check .color if space is empty so check that before
-                if board[try_y][try_x] != '<>' and board[try_y][try_x].color == board[oy][ox].color:
-                    directions[dir] = False
-                    continue
-                # If a direction is blocked then that direction should be omitted from the list
-                # 
-
-            except IndexError:
-                directions[dir] = False
-                continue
-                # if old pos + direction * step = new pos 
-            if oy + (ydir*stp) == ny and ox + (xdir*stp) == nx:
-                return True 
-
-    print("Invalid move") # DEBUG:
+        print("Knights moves need to be seperate")
+        raise NotImplementedError
+        
+    vecy = ny - oy
+    vecx = nx - ox
+    # TODO: SOMETHINGS WRONG FML
+    for scalar in range(1, piece.range):
+        vec = (vecy/scalar, vecx/scalar)
+        if vec in piece.vec:
+            vec = (int(vecy/scalar), int(vecx/scalar)) # convert it to int because list indices later
+            piece.active_move(vec)
+            print("vec found! active_move called") # DEBUG
+            return True
+    print("vec not found! Invalid move") # DEBUG
     return False
+    
+def check_collision(piece : Piece, board : list[list[any]], oy : int, ox : int, ny : int, nx : int) -> bool:
+    """ check_collision takes the self.active_vec from piece and checks if any pieces are in its way
+        to its destination   
+    """
+    # TODO: Implement Knight moveset
+    if hasattr(piece, "jumps"):
+        print("Knights moves need to be seperate")
+        raise NotImplementedError
+
+    vecy, vecx = move_vec = piece.active_vec # eg move_vec = (0, 4) or (3, 3)
+    piece.rm_active_vec()
+    # we just have to iterate the amount of the highest num in move_vec
+    # set comprehension down there gets the highest num from a tuple with 0 in it or with 2 same values
+    for stp in range(1, piece.range+1):
+        try_y, try_x = oy + (vecy*stp), ox + (vecx*stp)
+        tryyx = try_y, try_x
+        newpos = ny, nx
+        # next step empty AND NOT destination -> NEXT TILE
+        if board[try_y][try_x] == '<>' and tryyx != newpos:
+            print(f"this tile is {board[try_y][try_x]}") # DEBUG
+            continue
+        # next step a piece AND NOT destination -> BLOCKED
+        if board[try_y][try_x] != '<>' and tryyx != newpos:
+            print(f"the path is blocked by {board[try_y][try_x]} at {lst_idx_to_chess((try_y, try_x))}") # DEBUG
+            return False # BLOCKED
+        # next step empty AND destination -> REACHED DESTINATION
+        elif board[try_y][try_x] == '<>' and tryyx == newpos:
+            print(f"REACHED DESTINTY at {lst_idx_to_chess((try_y, try_x))}") # DEBUG
+            return True
+        # next step a piece AND destination AND piece has diff color -> REACHED DESTINATION AND KILLS ENEMY
+        elif board[try_y][try_x] != '<>' and try_y == ny and try_x == ny and board[try_y][try_x].color != piece.color:
+            print(f"Captured enemy piece at {lst_idx_to_chess((try_y, try_x))}")
+            return True
+
+    #breakpoint()
+    ## vector k = (0, 1) and v = bool. If v is untrue this way is blocked and skipped
+    # vectors = {}
+    # for item in piece.vec:
+    #     vectors.setdefault(item, True)
+    
+    # for stp in range(1, piece.range+1):
+    #     for vec in vectors:
+    #         if vectors[vec] == False:
+    #             continue
+    #         vecy, vecx = vec[0], vec[1]
 
 
+    #         try_y, try_x = oy + (vecy*stp), ox + (vecx*stp)
+            
+    #         # dont check for negative because then it wraps around the list
+    #         if try_y < 0 or try_x < 0:
+    #             continue
+            
+    #         try: # cant check .color if space is empty so check that before
+    #             if board[try_y][try_x] != '<>' and board[try_y][try_x].color == board[oy][ox].color:
+    #                 vectors[vec] = False
+    #                 continue
+    #             # If a vectors is blocked then that vectors should be omitted from the list
+    #             # 
+
+    #         except IndexError:
+    #             vectors[vec] = False
+    #             continue
+    #             # if old pos + vector * step = new pos 
+    #         if oy + (vecy*stp) == ny and ox + (vecx*stp) == nx:
+    #             return True 
 
 def main():
     current_board = get_start_board()
@@ -116,17 +174,22 @@ def main():
             else: current_player = 'Black'
             
             selected_field = input(f"{current_player}'s Turn: " ) # TODO: Input validation
-            y, x = oldpos = convert_to_chess_index(selected_field)
+            y, x = chess_idx_to_lst(selected_field)
             piece : Piece = current_board[y][x]
-
+            # check if right piece is grabbed
             if piece == '<>' or piece.color != current_player[0].lower():
-                # check if picked item is empty or player color 
                 print('invalid target') # DEBUG
                 continue
             
             destination = input(f'Move {piece} ({selected_field}) to: ') # TODO: Input validation
-            ny, nx = newpos = convert_to_chess_index(destination)
-            if not move_valid(oldpos, newpos, current_board):
+            ny, nx = chess_idx_to_lst(destination)
+            # check move validity
+            if y == ny and x == nx:
+                continue
+            if not check_colinearity(piece, y, x, ny, nx):
+                print(f"{piece} on {selected_field} can't move to {destination}") # DEBUG
+                continue
+            if not check_collision(piece, current_board, y, x, ny, nx):
                 continue
 
             current_board[ny][nx], current_board[y][x] = current_board[y][x], current_board[ny][nx]

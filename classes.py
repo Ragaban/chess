@@ -3,10 +3,10 @@ from re import X
 
 
 class Piece:
-    """dir attr = (y, x)"""
+    """vec attr = (y, x)"""
     def __init__(self, color : str):
         self.color = color
-        self.not_moved_yet = True
+        self.first_move = False
 
         #self.pos = pos
     # OLD: 
@@ -20,39 +20,47 @@ class Piece:
     def __str__(self):
         return  self.color + self.name
 
+    def moved(self):
+        self.first_move = False
+
+    def active_move(self, vec : tuple[int, int]):
+        self.active_vec = vec
+
+    def rm_active_vec(self):
+        del self.active_vec
+
  
 class King(Piece):
-    name = "K"
-    range = 1
-    dir =  (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1),
+    name : str = "K"
+    range : int = 1
+    vec : tuple[tuple[int, int],...] = (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1),
     
 class Queen(Piece):
-    name = "Q"
-    range = 7
-    dir = (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1), 
+    name : str = "Q"
+    range : int = 7
+    vec : tuple[tuple[int, int],...] = (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1), 
 
 class Bishop(Piece):
-    name = "B"
-    range = 7
-    dir = (1, 1), (-1, 1), (1, -1), (-1, -1) 
+    name : str = "B"
+    range : int = 7
+    vec : tuple[tuple[int, int],...] = (1, 1), (-1, 1), (1, -1), (-1, -1),
 
 class Rook(Piece):
-    name = "R"
-    range = 7
-    dir = (1, 0), (-1, 0), (0, 1), (0, -1)
+    name : str = "R"
+    range : int = 7
+    vec: tuple[tuple[int, int],...] = (1, 0), (-1, 0), (0, 1), (0, -1),
 
 class Pawn(Piece):
-    name = "P"
-    range = 1
+    name : str = "P"
+    range : int = 1
     def __init__(self, color: str):
-        # set direction of pawn piece
+        # set vector of pawn piece
         self.color = color
-        if color == 'w': self.dir = (-1, 0), (0, 0)
-        else: self.dir = (1, 0), (0, 0)
+        if color == 'w': self.vec : tuple[tuple[int, int],...] = (-1, 0),  # (0, 0) are needed because ((-1, 0), (0, 0)) is desired
+        else: self.vec = (1, 0),              # and ((-1,0)) gets reduced to (-1, 0)   
 
 # Knight special piece
 class Knight(Piece):
-    name = "G"
-    jumps = True
-    dir = (())
-
+    name : str = "G"
+    jumps : bool = True
+    vec : tuple[tuple[int, int],...] = ((),)
