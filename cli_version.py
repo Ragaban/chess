@@ -78,14 +78,9 @@ def check_colinearity(piece : Piece, oy: int, ox: int, ny: int, nx: int) -> bool
     PS: Ask EYDEE how he would do this function. Problem: dont want to use cls method active_move to pseudo return vec
     """
     # TODO: Implement Knight moveset
-    if hasattr(piece, "jumps"):
-        print("Knights moves need to be seperate")
-        raise NotImplementedError
-        
     vecy = ny - oy
     vecx = nx - ox
-    # TODO: SOMETHINGS WRONG FML
-    for scalar in range(1, piece.range):
+    for scalar in range(1, piece.range+1):
         vec = (vecy/scalar, vecx/scalar)
         if vec in piece.vec:
             vec = (int(vecy/scalar), int(vecx/scalar)) # convert it to int because list indices later
@@ -99,10 +94,15 @@ def check_collision(piece : Piece, board : list[list[any]], oy : int, ox : int, 
     """ check_collision takes the self.active_vec from piece and checks if any pieces are in its way
         to its destination   
     """
-    # TODO: Implement Knight moveset
+    # TODO: find a better way to store the valid vec in the fn check_colineartiy() and giving 
     if hasattr(piece, "jumps"):
-        print("Knights moves need to be seperate")
-        raise NotImplementedError
+        piece.rm_active_vec() # not used by the stupid Knight
+        if board[ny][nx] == '<>' or board[ny][nx].color != piece.color:
+            
+            return True
+        else: 
+            return False
+        
 
     vecy, vecx = move_vec = piece.active_vec # eg move_vec = (0, 4) or (3, 3)
     piece.rm_active_vec()
@@ -128,39 +128,6 @@ def check_collision(piece : Piece, board : list[list[any]], oy : int, ox : int, 
         elif board[try_y][try_x] != '<>' and try_y == ny and try_x == ny and board[try_y][try_x].color != piece.color:
             print(f"Captured enemy piece at {lst_idx_to_chess((try_y, try_x))}")
             return True
-
-    #breakpoint()
-    ## vector k = (0, 1) and v = bool. If v is untrue this way is blocked and skipped
-    # vectors = {}
-    # for item in piece.vec:
-    #     vectors.setdefault(item, True)
-    
-    # for stp in range(1, piece.range+1):
-    #     for vec in vectors:
-    #         if vectors[vec] == False:
-    #             continue
-    #         vecy, vecx = vec[0], vec[1]
-
-
-    #         try_y, try_x = oy + (vecy*stp), ox + (vecx*stp)
-            
-    #         # dont check for negative because then it wraps around the list
-    #         if try_y < 0 or try_x < 0:
-    #             continue
-            
-    #         try: # cant check .color if space is empty so check that before
-    #             if board[try_y][try_x] != '<>' and board[try_y][try_x].color == board[oy][ox].color:
-    #                 vectors[vec] = False
-    #                 continue
-    #             # If a vectors is blocked then that vectors should be omitted from the list
-    #             # 
-
-    #         except IndexError:
-    #             vectors[vec] = False
-    #             continue
-    #             # if old pos + vector * step = new pos 
-    #         if oy + (vecy*stp) == ny and ox + (vecx*stp) == nx:
-    #             return True 
 
 def main():
     current_board = get_start_board()

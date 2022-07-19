@@ -48,7 +48,7 @@ class Bishop(Piece):
 class Rook(Piece):
     name : str = "R"
     range : int = 7
-    vec: tuple[tuple[int, int],...] = (1, 0), (-1, 0), (0, 1), (0, -1),
+    vec : tuple[tuple[int, int],...] = (1, 0), (-1, 0), (0, 1), (0, -1),
 
 class Pawn(Piece):
     name : str = "P"
@@ -61,6 +61,8 @@ class Pawn(Piece):
 
 # Knight special piece
 class Knight(Piece):
-    name : str = "G"
+    """ Knight has range 1 so for loops only go once"""
+    name : str = "N"
     jumps : bool = True
-    vec : tuple[tuple[int, int],...] = ((),)
+    range : int = 1
+    vec : tuple[tuple[int, int],...] = (2, 1), (1, 2), (-1, 2), (-2, 1), (-2, -1), (-1, -2), (1, -2), (2, -1)
