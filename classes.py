@@ -2,11 +2,21 @@ from typing import TypeAlias
 
 Vector: TypeAlias = tuple[int, int]
 
+
+class Player:
+    captures = []
+    # games = {"wins": 0, "loses": 0}
+
+    def __init__(self, color: str):
+        self.color = color
+
+    
+
 class Piece:
     """vec attr = (y, x)"""
     def __init__(self, color: str):
         self.color = color
-        self.first_move = False
+        self.moved = False
 
     def __repr__(self):
         return f"Piece('{self.color}')"
@@ -16,13 +26,6 @@ class Piece:
 
     def moved(self):
         self.first_move = False
-
-    def active_move(self, vec: tuple[int, int]):
-        self.active_vec = vec
-
-    def rm_active_vec(self):
-        del self.active_vec
-
  
 class King(Piece):
     name: str = "K"
@@ -61,9 +64,16 @@ class Pawn(Piece):
         # set vector of pawn piece
         self.color = color
         if color == 'w': 
-            self.vec: tuple[Vector,...] = ((-1, 0),) 
+            self.vec: tuple[Vector,...] = ((-1, 0), (-2, 0)) 
         else: 
-            self.vec: tuple[Vector,...] = ((1, 0),)             
+            self.vec: tuple[Vector,...] = ((1, 0), (2, 0))             
+
+    def first_move(self):
+        self.moved = True
+        if self.vec[0] < 0:
+            self.vec = ((-1, 0),)
+        else:
+            self.vec = ((1, 0),)
 
 # Knight special piece
 class Knight(Piece):

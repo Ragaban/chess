@@ -1,12 +1,14 @@
+from copy import deepcopy
 from typing import TypeAlias
 from classes import Piece, King, Queen, Bishop, Knight, Rook, Pawn
 
 # vars
 padding = '\t\t'
 Vector: TypeAlias = tuple[int, int]
+ChessArray: TypeAlias = list[list[Piece | str], list[Piece | str],]
 
 # functions
-def get_start_board():
+def get_start_board() -> ChessArray:
     # TODO: Rework loading the board and
     """creates start board"""
     board = [
@@ -34,7 +36,7 @@ def get_start_board():
     return board
 
 def draw_board(board):
-    """draws board on std oupt"""
+    """print out chess board"""
     print(end='\n\n\n')
     print( padding + ' A  B  C  D  E  F  G  H')
     row_num = 8
@@ -64,7 +66,7 @@ def chess_idx_to_lst(board_pos: str) -> tuple:
     print(f'{board_pos} | ({y}, {x})') # DEBUG:
     return y, x
 
-def lst_idx_to_chess(idx):
+def lst_idx_to_chess(idx) -> str:
     lst_y, lst_x = idx
     match lst_x:
         case 0: x = 'a'
@@ -77,7 +79,7 @@ def lst_idx_to_chess(idx):
         case 7: x = 'h'
 
     y = 8 - lst_y
-    return y, x
+    return f"{x.upper()}{y}"
 
 def check_colinearity(piece: Piece, vec: Vector) -> bool:
     """
@@ -91,8 +93,7 @@ def check_colinearity(piece: Piece, vec: Vector) -> bool:
         if vec in piece.vec:
             # convert it to int because list indices later
             vec = (int(vec[0]/scalar), int(vec[1]/scalar))
-            piece.active_move(vec)
-            print("vec found! active_move called") # DEBUG
+            print("vec found!") # DEBUG
             return True
     print("vec not found! Invalid move") # DEBUG
     return False
@@ -123,35 +124,28 @@ def all_possible_vectors(
 def check_collision(
     piece: Piece,
     board: list[list[any]],
-    vec: tuple[int, int],
+    vec: Vector,
     ny: int, nx: int,
     oy: int, ox: int,
 ) -> bool:
     """ check_collision takes the self.active_vec from piece and checks if any pieces are in its way
         to its destination
     """
-    # TODO: find a better way to store the valid vec in
-    # the fn check_colineartiy() and giving
     if hasattr(piece, "jumps"):
-        piece.rm_active_vec() # not used by the stupid Knight
         if board[ny][nx] == '<>' or board[ny][nx].color != piece.color:
-
+            print(f"{piece} no collision {board[ny][nx]}") # DEBUG
             return True
         else:
+            print(f"{piece} collison on {board[ny][nx]}") # DEBUG
             return False
 
-    vecy, vecx = piece.active_vec # eg move_vec = (0, 4) or (3, 3)
-    piece.rm_active_vec()
-    # we just have to iterate the amount of the highest num in move_vec
-    # set comprehension down there gets the highest
-    # num from a tuple with 0 in it or with 2 same values
-    for stp in range(1, piece.range+1):
-        try_y, try_x = oy + (vecy*stp), ox + (vecx*stp)
+    vecy, vecx = vec
+    for s in range(1, piece.range+1):
+        try_y, try_x = oy + (vecy*s), ox + (vecx*s)
         tryyx = try_y, try_x
         newpos = ny, nx
         # next step empty AND NOT destination -> NEXT TILE
         if board[try_y][try_x] == '<>' and tryyx != newpos:
-            print(f"this tile is {board[try_y][try_x]}") # DEBUG
             continue
         # next step a piece AND NOT destination -> BLOCKED
         if board[try_y][try_x] != '<>' and tryyx != newpos:
@@ -177,17 +171,14 @@ def testfn_fill_vectors(vectors, board, y, x):
     draw_board(board)
     input()
 
-
-
 #----------------------------------------------------------------------
 
 def main():
     current_board = get_start_board()
-    #breakpoint() #DEBUG
     while True:
-        turn_counter = 1 # odd turns white & even turns black
+        turn_counter = 1 # odd White even Black
         while True:
-            # Player Turn actual main loop
+            # Current Player Turn
             draw_board(current_board)
             if turn_counter % 2 == 1: current_player = 'White'
             else: current_player = 'Black'
@@ -195,12 +186,14 @@ def main():
             # TODO: Input validation
             selected_field = input(f"{current_player}'s Turn: " )
             y, x = chess_idx_to_lst(selected_field)
-            piece: Piece = current_board[y][x]
-
-            # check if right piece is grabbed
-            if piece == '<>' or piece.color != current_player[0].lower():
-                print('invalid target') # DEBUG
+            if current_board[y][x] == '<>':
+                print(f"{selected_field} is empty")
                 continue
+            if current_board[y][x].color != current_player[0].lower():
+                print(f"{current_player} that piece does not belong to you!")
+                continue
+            
+            piece: Piece = current_board[y][x]
             # TODO: Input validation
             destination = input(f'Move {piece} ({selected_field}) to: ')
             ny, nx = chess_idx_to_lst(destination)
@@ -213,24 +206,29 @@ def main():
             vec = (vecy, vecx)
 
             av = all_possible_vectors(piece, current_board, y, x)
-            
-
-            test_board = current_board[:]
-            testfn_fill_vectors(av, test_board, y, x)
 
 
-            # TODO: UNCOMMENT 
-            # if not check_colinearity(piece, vec,):
-            #     print(
-            #         f"{piece} on {selected_field} can't move to {destination}"
-            #     ) # DEBUG
-            #     continue
+            # BUG: IF you copy with [:] the og list gets overwritten somehow
+            # BUG: if copy wiht deepcopy collision check does not work somehow
+            # BUG: FKING KILL ME NOW
+            # test_board = current_board[:]
+            # test_board = deepcopy(current_board)
+            # testfn_fill_vectors(av, test_board, y, x)
 
-            # if not check_collision(piece, current_board, vec, ny, nx):
-            #     continue
 
-            # current_board[ny][nx], current_board[y][x] = current_board[y][x], current_board[ny][nx]
-            # TODO: UNCOMMENT
+            if not check_colinearity(piece, vec):
+                print(
+                    f"{piece} on {selected_field} can't move to {destination}"
+                ) # DEBUG
+                continue
+
+            if not check_collision(piece, current_board, 
+                        vec, ny, nx, y, x):
+                continue
+
+            # TODO: Finally do the move action and then the capture action 
+            # TODO: Create a fking player cls
+            current_board[ny][nx], current_board[y][x] = current_board[y][x], current_board[ny][nx]
 
             turn_counter += 1
 
