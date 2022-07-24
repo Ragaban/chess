@@ -10,33 +10,31 @@ class Player:
     def __init__(self, color: str):
         self.color = color
 
-    
 
 class Piece:
-    """vec attr = (y, x)"""
+    """ vec attr = (y, x) """
     def __init__(self, color: str):
         self.color = color
-        self.moved = False
-
-    def __repr__(self):
-        return f"Piece('{self.color}')"
+        self.fm = False
 
     def __str__(self):
-        return  self.color + self.name
+        return  self.color[0] + self.name[0]
 
-    def moved(self):
-        self.first_move = False
+    def did_first_move(self):
+        self.fm = True
  
+
 class King(Piece):
-    name: str = "K"
+    name: str = "King"
     range: int = 1
     vec: tuple[Vector,...] = (
         (1, 0), (-1, 0), (0, 1), (0, -1), 
         (1, 1), (-1, 1), (1, -1), (-1, -1),
     )
+
     
 class Queen(Piece):
-    name: str = "Q"
+    name: str = "Queen"
     range: int = 7
     vec: tuple[Vector,...] = (
         (1, 0), (-1, 0), (0, 1), (0, -1), 
@@ -44,44 +42,49 @@ class Queen(Piece):
     )
 
 class Bishop(Piece):
-    name: str = "B"
+    name: str = "Bishop"
     range: int = 7
     vec: tuple[Vector,...] = (
         (1, 1), (-1, 1), (1, -1), (-1, -1),
     )
 
 class Rook(Piece):
-    name: str = "R"
+    name: str = "Rook"
     range: int = 7
     vec: tuple[Vector,...] = (
     (1, 0), (-1, 0), (0, 1), (0, -1),
     )
 
 class Pawn(Piece):
-    name: str = "P"
-    range: int = 1
+    name: str = "Pawn"
+    range: int = 2
     def __init__(self, color: str):
         # set vector of pawn piece
         self.color = color
-        if color == 'w': 
-            self.vec: tuple[Vector,...] = ((-1, 0), (-2, 0)) 
-        else: 
-            self.vec: tuple[Vector,...] = ((1, 0), (2, 0))             
+        self.fm = False
 
-    def first_move(self):
-        self.moved = True
-        if self.vec[0] < 0:
-            self.vec = ((-1, 0),)
-        else:
-            self.vec = ((1, 0),)
+        if color == 'white': 
+            self.vec: tuple[Vector,...] = ((-1, 0),) 
+        else: 
+            self.vec: tuple[Vector,...] = ((1, 0),)             
+
+    def did_first_move(self):
+        self.range = 1
+        self.fm = True 
+    
+    
+
 
 # Knight special piece
 class Knight(Piece):
     """ Knight has range 1 so for loops only go once"""
-    name: str = "N"
+    name: str = "Knight"
     jumps: bool = True
     range: int = 1
     vec: tuple[Vector,...] = (
         (2, 1), (1, 2), (-1, 2), (-2, 1), 
         (-2, -1), (-1, -2), (1, -2), (2, -1)
     )
+
+    def __str__(self):
+        return f"{self.color[0]}{self.name[1].upper()}"
