@@ -84,13 +84,15 @@ def lst_idx_to_chess(idx: tuple[int, int]) -> str:
 
 
 def all_board_vectors( piece: Piece, board: ChessArray, oy: int, ox: int,
-    ) -> list[list[tuple[Vector,...],]]:
+    ) -> list[list[list[Vector,],]]:
     """ Returns all possible vectors the given piece has on the board w/o collision
-        the list is sorted by directions. Each inner list is is in ascending order. """
+        Return -> list is sorted by directions. Each inner list is is in ascending order. """
     
     board_vectors = []
-    for v in piece.vec:
-        dir = []
+    vectors = piece.my_vectors()
+
+    for v in vectors:
+        direction = []
         for s in range(1, piece.range + 1):
             y = v[0] * s
             x = v[1] * s
@@ -103,61 +105,92 @@ def all_board_vectors( piece: Piece, board: ChessArray, oy: int, ox: int,
                     pass
             except IndexError:
                 continue
-            dir.append((y, x))
-        if dir == []:
+            direction.append((y, x))
+        if direction == []:
             continue
-        board_vectors.append(dir)
+        board_vectors.append(direction)
     return board_vectors
 
-def check_path_blocked(vectors: list[list[Vector,]], board: ChessArray, oy: int, ox: int) -> list:
+def check_path_blocked(vectors: list[list[Vector,]], board: ChessArray, 
+    oy: int, ox: int
+    ) -> list[Vector,]:
     """ Check which vectors are unblocked from the given all_free_vectors list
         the given input should look this : [[(...),(...)], [(...),(...)], ... ]
-        each inner list represents a directions
-    """
-    unblocked_vectors = []
+        each inner list represents a directions"""
 
+    unblocked_vectors = []
     for directions in vectors:
         # e.g [(...), (...), ...]
         for vec in directions:
             vecy, vecx = vec
-            testy, testx = testyx = oy + vecy, ox + vecx
+            testy, testx = oy + vecy, ox + vecx
             test_tile = board[testy][testx]
 
             if test_tile == '<>':
                 unblocked_vectors.append(vec)
 
-            elif test_tile != '<>':
+            elif (test_tile != '<>'
+                    and test_tile.color == board[oy][ox].color):
                 break
+                
+            elif (test_tile != '<>'
+                    and test_tile.color != board[oy][ox].color):
+                unblocked_vectors.append(vec)
 
             else:
-                print(f"Error: test_tile: {test_tile}, vec: {vec}")
+                print(f"Error: skipped collision")
 
     return unblocked_vectors
         
+def pawn_diag(piece, board, oy, ox) -> list[Vector,]:
+    """Returns list of possible capture vectors for a Pawn"""
+    capture_vectors = piece.capture_vectors()
+    vecs = []
+    for cv in capture_vectors:
+        newpos = board[oy + cv[0]][ox + cv[1]]
+        if newpos == '<>':
+            continue
+        elif newpos.color == piece.color:
+            continue
+        elif newpos.color != piece.color:
+            vecs.append(cv)
+    return vecs
+    
 
 def collision_check_knight(piece: Piece, board: ChessArray, ny: int, nx: int
     ) -> bool:
-    """Checks if destination has enemy or is empty"""
+    """ Checks if destination has enemy or is empty"""
     if (board[ny][nx] == '<>' 
             or board[ny][nx].color != piece.color): 
         # new pos empty and enemy there             
-        print(f"{piece} no collision {board[ny][nx]}")      # DEBUG
+        print(f"{piece} no collision {board[ny][nx]}")                      # DEBUG
         return True
     else:
-        print(f"{piece} collison on {board[ny][nx]} {lst_idx_to_chess((ny, nx))}")       # DEBUG
+        newpos = lst_idx_to_chess((ny,nx))
+        print(
+            f"{piece} collison on {board[ny][nx]} {newpos}")                # DEBUG
         return False
 
 def highlight_viable_mvs(vectors: tuple[Vector,...], board: ChessArray,
     y: int, x: int,
     ) -> None:
     """ fills all possible tiles where piece can move with XX's
-    this function is used later for the GUI
-    """
+    this function is used later for the GUI"""
     for vector in vectors:
         vecy, vecx = vector[0], vector[1]
         board[y + vecy][x + vecx] = "XX"
     print("HIGHLIGHT VIABLE MOVES")
     draw_board(board)
+
+
+def move_piece(board: ChessArray, ny: int, nx: int, oy: int, ox: int) -> Piece | None:
+    board[ny][nx], board[oy][ox] = board[oy][ox], board[ny][nx]
+    if board[oy][ox] == '<>':
+        return None
+    captured_piece = board[oy].pop(ox)
+    board[oy].insert(ox, '<>')
+    return captured_piece
+    
 
 #----------------------------------------------------------------------
 
@@ -165,22 +198,22 @@ def main():
     # STAGE 0: Initialization
     current_board = get_start_board()
     while True:
+        caputured_pieces = {'White': [], 'Black': []}
         turn_counter = 1            # odd White even Black
-        
         while True:
-            # STAGE 1: Beginning of Turn
+            # STAGE 1:          Beginning of Turn
             draw_board(current_board)
             if turn_counter % 2 == 1: current_player = 'White'
             else: current_player = 'Black'
 
-            # STAGE 2: Player Grabs Piece
+            # STAGE 2:          Player Grabs Piece
             # TODO: Input validation
             selected_tile = input(f"{current_player}'s Turn: " )
             oy, ox = chess_idx_to_lst(selected_tile)
             piece: Piece = current_board[oy][ox]
 
             
-            # STAGE 2.1: Validating Piece
+            # STAGE 2.1:        Validating Grabbed Piece
             if current_board[oy][ox] == '<>':
                 print(f"{selected_tile} is empty, choose another field!")
                 continue
@@ -189,71 +222,82 @@ def main():
                 print(f"{current_player}, {piece} does not belong to you!")
                 continue
             
-            # STAGE 2.2: Check if piece can move
+            # STAGE 2.2:        Check Where Grabbed Piece Can Move
+
             all_vecs = all_board_vectors(piece, current_board, oy, ox)
-            print(f"all_possible_vecs --> {all_vecs}")        # DEBUG
+            print(f"all_possible_vecs --> {all_vecs}")                      # DEBUG
 
             unblocked_vecs = check_path_blocked(all_vecs, current_board, oy, ox)
-            print(f"these vecs are unblocked: {unblocked_vecs}")      # DEBUG
+
+            # STAGE 2.2.1:      Check Pawns Move Diag Move
+            if piece.name == 'Pawn' and piece.fm: 
+                cap_vectors = pawn_diag(piece, current_board, oy, ox)
+                print(f"Diag Vec: {cap_vectors}")                           # DEBUG
+                if cap_vectors != []:
+                    unblocked_vecs += cap_vectors
+
+            print(f"these vecs are unblocked: {unblocked_vecs}")            # DEBUG
 
             if unblocked_vecs == []:
                 print(f"{piece} can't go anywhere")
                 continue
 
+
             test_board = deepcopy(current_board)                            # DEBUG 
             highlight_viable_mvs(unblocked_vecs, test_board, oy, ox)        # AND GUI RELATED
 
-            # STAGE 3: Player Moves Piece
+            # STAGE 3:          Player declares destination
             # TODO: Input validation
             destination = input(f'Move {piece} ({selected_tile.upper()}) to: ')
             ny, nx = chess_idx_to_lst(destination)
-
-
             vecy, vecx = ny - oy, nx - ox
             vec = (vecy, vecx)
-
-
-            newlist = []        # turns av: list[list[tuple]] -> list[tuple] for comparasion
-            for direction in all_vecs:
-                for item in direction:
-                    newlist.append(item)
             
-            # STAGE 3.2: Validating Move
+            # STAGE 3.2:        Validating Move
             if oy == ny and ox == nx:
-            # Not moving is not legal
+                # Not moving is not legal
                 continue
 
-            if vec not in newlist:
-                print(f"{destination.upper()} not in {piece}'s range")
-                continue
+            # TODO: Think if this code block is gonna be used later 
+            # pawn_diag() not compatible with it and 
+            # lst_form_of_av = []        
+            # for direction in all_vecs:
+            #     for item in direction:
+            #         # turns av: list[list[tuple]] -> list[tuple] for comparision
+            #         lst_form_of_av.append(item)
+
+            # if vec not in lst_form_of_av:
+            #     print(f"{destination.upper()} not in {piece}'s range")
+            #     continue
 
             # Check if knight moved.
             if hasattr(piece, "jumps"):
                 if not collision_check_knight(piece, current_board, ny, nx):
                     print(
                         f"{piece} cant mv to {destination.upper()}, one of ur pieces on there"
-                        )           # DEBUG
+                        )                                                   # DEBUG
                     continue
 
             if vec not in unblocked_vecs:
-                print(f"{piece} is blocked")        # DEBUG
+                print(f"{piece} cannot move there!")                                # DEBUG
                 continue
 
-
-            # TODO: MOVE FUNCTION AND CAPTURED PIECE
+            # Stage 4:          Move and Capture
             # TODO: PAWN CLASS NEEDS THE DIAGONAL CAPTURE
-            current_board[ny][nx], current_board[oy][ox] = current_board[oy][ox], current_board[ny][nx]
 
+            capture = move_piece(current_board, ny, nx, oy, ox)
+            if capture is not None:
+                caputured_pieces[current_player].append(capture)                
+            
+            print(caputured_pieces.values())                                # DEBUG
 
-            if not piece.fm:         
-                piece.did_first_move()
+            if not piece.fm:
+                # Checks if piece made its first move     
+                piece.made_first_move()
             turn_counter += 1
 
-
-        # move piece
-        # check for win
-
         break
+    return
 
 if __name__ == "__main__":
     main()
