@@ -10,18 +10,17 @@ Vector: TypeAlias = tuple[int, int]
 #         self.captures = captures
 
 class Piece:
-    """     self.vec = (y, x). 
-            self.fm stands for First Move. Used to check if piece made first move"""
+    """ self.vec = (y, x). """
     vec = []
     def __init__(self, color: str):
         self.color = color
-        self.fm: bool = False
+        self.first_mv: bool = False
 
     def __str__(self):
         return  self.color[0] + self.name[0]
 
     def made_first_move(self):
-        self.fm = True
+        self.frist_mv = True
 
     def my_vectors(self):
         return self.vec
@@ -62,11 +61,11 @@ class Rook(Piece):
 class Pawn(Piece):
     name: str = "Pawn"
     range: int = 2
+
     def __init__(self, color: str):
         self.color = color
-        self.fm = False
+        self.first_mv = False
         self.direction = 1            # Black move direction
-
         if self.color.lower() == 'white':       
             self.direction = -1       # White move direction
 
@@ -74,10 +73,9 @@ class Pawn(Piece):
 
     def made_first_move(self):
         self.range = 1
-        self.fm = True 
+        self.first_mv = True 
 
     def capture_vectors(self) -> list[Vector,]:
-        # Pawn cant capture if it's its first move
         return [(1 * self.direction, 1), (1 * self.direction, -1)]
     
     def my_vectors(self) -> list[Vector]:

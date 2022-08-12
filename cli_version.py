@@ -48,6 +48,19 @@ def draw_board(board) -> None:
                 print(' ' + str(row_num))
                 row_num -= 1
 
+def ipt_checker(string) -> bool:
+    """ checks if given string matches chess idx"""
+    if len(string) != 2:
+        return False
+    if (string.isalnum()
+            and not string.isdigit()
+            and not string.isalpha()
+        ):
+        return True
+    else:
+        print('Something happend with ipt_checker()')
+        return False
+
 def chess_idx_to_lst(board_pos: str) -> tuple:
     """ Converts chess board index to list index """
     board_y, board_x =  int(board_pos[1]), board_pos[0]
@@ -85,8 +98,8 @@ def lst_idx_to_chess(idx: tuple[int, int]) -> str:
 
 def all_board_vectors( piece: Piece, board: ChessArray, oy: int, ox: int,
     ) -> list[list[list[Vector,],]]:
-    """ Returns all possible vectors the given piece has on the board w/o collision
-        Return -> list is sorted by directions. Each inner list is is in ascending order. """
+    """ Returns all possible vectors the given piece has on the empty board
+        Return is sorted by directions. Each inner list is is in ascending order. """
     
     board_vectors = []
     vectors = piece.my_vectors()
@@ -97,7 +110,7 @@ def all_board_vectors( piece: Piece, board: ChessArray, oy: int, ox: int,
             y = v[0] * s
             x = v[1] * s
             
-            if ox + x < 0:
+            if ox + x < 0 or oy + y < 0:
                 # if x is negative it wraps around list
                 continue
             try:
@@ -126,16 +139,21 @@ def check_path_blocked(vectors: list[list[Vector,]], board: ChessArray,
             testy, testx = oy + vecy, ox + vecx
             test_tile = board[testy][testx]
 
+            if testx < 0 or testy < 0:
+                # dont check for negative idx 
+                continue
+
             if test_tile == '<>':
                 unblocked_vectors.append(vec)
-
-            elif (test_tile != '<>'
-                    and test_tile.color == board[oy][ox].color):
+                continue 
+            
+            if test_tile.color == board[oy][ox].color:
                 break
                 
-            elif (test_tile != '<>'
-                    and test_tile.color != board[oy][ox].color):
+            elif test_tile.color != board[oy][ox].color:
                 unblocked_vectors.append(vec)
+                # cut off here because piece behind them cant be captured
+                break
 
             else:
                 print(f"Error: skipped collision")
@@ -147,13 +165,16 @@ def pawn_diag(piece, board, oy, ox) -> list[Vector,]:
     capture_vectors = piece.capture_vectors()
     vecs = []
     for cv in capture_vectors:
-        newpos = board[oy + cv[0]][ox + cv[1]]
-        if newpos == '<>':
+        try:
+            newpos = board[oy + cv[0]][ox + cv[1]]
+        except IndexError:
             continue
-        elif newpos.color == piece.color:
+        if newpos == '<>':
             continue
         elif newpos.color != piece.color:
             vecs.append(cv)
+        else:
+            print('Something happend in fn pawn_diag()')                    # DEBUG
     return vecs
     
 
@@ -207,8 +228,14 @@ def main():
             else: current_player = 'Black'
 
             # STAGE 2:          Player Grabs Piece
-            # TODO: Input validation
-            selected_tile = input(f"{current_player}'s Turn: " )
+            while True:
+                selected_tile = input(f"{current_player}'s Turn: " )
+                if ipt_checker(selected_tile):
+                    break
+            
+            if selected_tile[0].isdigit():
+                selected_tile = selected_tile[1] + selected_tile[0]
+
             oy, ox = chess_idx_to_lst(selected_tile)
             piece: Piece = current_board[oy][ox]
 
@@ -223,14 +250,13 @@ def main():
                 continue
             
             # STAGE 2.2:        Check Where Grabbed Piece Can Move
-
             all_vecs = all_board_vectors(piece, current_board, oy, ox)
             print(f"all_possible_vecs --> {all_vecs}")                      # DEBUG
 
             unblocked_vecs = check_path_blocked(all_vecs, current_board, oy, ox)
 
-            # STAGE 2.2.1:      Check Pawns Move Diag Move
-            if piece.name == 'Pawn' and piece.fm: 
+            # STAGE 2.3:      Check Pawns Move Diag Move
+            if piece.name == 'Pawn':
                 cap_vectors = pawn_diag(piece, current_board, oy, ox)
                 print(f"Diag Vec: {cap_vectors}")                           # DEBUG
                 if cap_vectors != []:
@@ -244,33 +270,27 @@ def main():
 
 
             test_board = deepcopy(current_board)                            # DEBUG 
-            highlight_viable_mvs(unblocked_vecs, test_board, oy, ox)        # AND GUI RELATED
+            highlight_viable_mvs(unblocked_vecs, test_board, oy, ox)
 
             # STAGE 3:          Player declares destination
-            # TODO: Input validation
-            destination = input(f'Move {piece} ({selected_tile.upper()}) to: ')
+            while True:
+                destination = input(f'Move {piece} ({selected_tile.upper()}) to: ')
+                if ipt_checker(destination):
+                    break
+            
+            if destination[0].isdigit():
+                destination = destination[1] + destination[0]
+
             ny, nx = chess_idx_to_lst(destination)
             vecy, vecx = ny - oy, nx - ox
             vec = (vecy, vecx)
             
-            # STAGE 3.2:        Validating Move
+            # STAGE 3.1:        Validating Move
             if oy == ny and ox == nx:
                 # Not moving is not legal
                 continue
 
-            # TODO: Think if this code block is gonna be used later 
-            # pawn_diag() not compatible with it and 
-            # lst_form_of_av = []        
-            # for direction in all_vecs:
-            #     for item in direction:
-            #         # turns av: list[list[tuple]] -> list[tuple] for comparision
-            #         lst_form_of_av.append(item)
-
-            # if vec not in lst_form_of_av:
-            #     print(f"{destination.upper()} not in {piece}'s range")
-            #     continue
-
-            # Check if knight moved.
+            # Stage 3.2         Check for Knight
             if hasattr(piece, "jumps"):
                 if not collision_check_knight(piece, current_board, ny, nx):
                     print(
@@ -279,20 +299,18 @@ def main():
                     continue
 
             if vec not in unblocked_vecs:
-                print(f"{piece} cannot move there!")                                # DEBUG
+                print(f"{piece} cannot move there!")                        # DEBUG
                 continue
 
             # Stage 4:          Move and Capture
-            # TODO: PAWN CLASS NEEDS THE DIAGONAL CAPTURE
-
             capture = move_piece(current_board, ny, nx, oy, ox)
             if capture is not None:
                 caputured_pieces[current_player].append(capture)                
             
             print(caputured_pieces.values())                                # DEBUG
 
-            if not piece.fm:
-                # Checks if piece made its first move     
+            if not piece.first_mv:
+
                 piece.made_first_move()
             turn_counter += 1
 
