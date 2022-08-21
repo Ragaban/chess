@@ -114,7 +114,7 @@ def belongs_to_player(board: ChessArray, player_color: str, y: int, x: int) -> b
 def free_vectors(board: ChessArray, piece: Piece, oy: int, ox: int,
     ) -> dict:
     """ Returns all possible vectors the given piece has on a empty board
-        Return is sorted by directions. Each inner list is is in ascending order. """
+        values are sorted by directions. Each inner list is is in ascending order. """
     
     piece_vectors = {piece: []}
     vectors = piece.my_vectors()
@@ -343,6 +343,14 @@ def main():
 
 
             # STAGE 5
+            # TODO: create a func that checks if king_checked
+            # that function should take the piece and move it to the possible pos
+            # AND if any enemy can move to the king discard piece vector
+            # Right now you have to recalc all vectors when doing this 
+            # so maybe you can calc it only once? Not that big of a priority right now
+            # 
+
+
             # if king_checked(board, current_player):
             #     print('Check!')
 
