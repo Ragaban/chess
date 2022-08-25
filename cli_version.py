@@ -49,6 +49,7 @@ def draw_board(board) -> None:
                 print(' ' + str(row_num))
                 row_num -= 1
 
+# Input funcs
 def ipt_checker(string) -> bool:
     """ checks if given string matches chess idx"""
     if len(string) != 2:
@@ -97,6 +98,7 @@ def lst_idx_to_chess(idx: tuple[int, int]) -> str:
     y = 8 - lst_y
     return f"{x.upper()}{y}"
 
+# Piece funcs
 def belongs_to_player(board: ChessArray, player_color: str, y: int, x: int) -> bool:
     """ Checks if given item in array belongs to given player."""
     if board[y][x] == '<>':
@@ -111,6 +113,7 @@ def belongs_to_player(board: ChessArray, player_color: str, y: int, x: int) -> b
     else:
         print("Something happend w/ belongs_to_player()")                   # DEBUG      
 
+# These three are linked
 def free_vectors(board: ChessArray, piece: Piece, oy: int, ox: int,
     ) -> dict:
     """ Returns all possible vectors the given piece has on a empty board
@@ -201,13 +204,45 @@ def pawn_diag(board: ChessArray, piece: Piece, oy: int, ox: int) -> list[Vector,
             print('Something happend in pawn_diag()')                    # DEBUG
     return vecs
 
-def find_piece(board, player_color, name) -> Coordinate:
-    """ returns first occurence of a piece. Used for finding king """
-    for y in board:
-        for x in y:
-            if x != '<>' and x.name == name and x.color == player_color.lower():
-                return board.index(y), y.index(x)
 
+def get_piece_idx(board: ChessArray, piece) -> tuple[int, int]:
+    """ Returns the first occurrence of a piece."""
+    for y, row in board:
+        for x, tile in row:
+            if piece == tile:
+                return y, x
+
+def king_check(board: ChessArray, color: str, all_vecs: dict) -> bool:
+    for piece in all_vecs:
+        if piece.name == 'King' and piece.color == color:
+            king_pos = get_piece_idx(board, piece)
+
+    for piece in all_vecs:
+        if piece.color == color:
+            continue
+
+        oy, ox = get_piece_idx(board, piece)
+
+        for vec in all_vecs[piece]:
+            if oy + vec[0] and ox + vec[1] == king_pos:
+                return True
+    
+    return False
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+# Board funcs
 def highlight_viable_mvs(vectors: tuple[Vector,...], board: ChessArray,
     y: int, x: int,
     ) -> None:
@@ -232,23 +267,25 @@ def main():
     # STAGE 0: Setup
     board = get_start_board()
     captured_pieces = {'White': [], 'Black': []}
-    
-    white_pieces = []
-    black_pieces = []
-    for y in board:
-        for x in y:
-            if x != '<>':
-                if x.color == 'white':
-                    white_pieces.append(x)
-                elif x.color == 'black':
-                    black_pieces.append(x)
                 
+    # white_pieces = []
+    # black_pieces = []
+    # for y in board:
+    #     for x in y:
+    #         if x != '<>':
+    #             if x.color == 'white':
+    #                 white_pieces.append(x)
+    #             elif x.color == 'black':
+    #                 black_pieces.append(x)
+    
     while True:
-        turn_counter = 1            # odd = White / even = Black
+        turn_counter = 1            
         while True:
             # STAGE 1:          Turn Starts
             draw_board(board)
+            
             if turn_counter % 2 == 1: current_player = 'White'
+            # odd = White / even = Black
             else: current_player = 'Black'
 
             # STAGE 2:          Player Picks Piece
@@ -281,23 +318,30 @@ def main():
                     # Pawns Capture Vecs
                     if p.name == 'Pawn':
                         cap_vectors = pawn_diag(board, p, y, x)
-                        print(f"Diag Vec: {cap_vectors}")                           # DEBUG
+                        print(f"Diag Vec: {cap_vectors}")                               # DEBUG
                         
                         if cap_vectors != []:
                             unblocked_vecs += cap_vectors
 
                     all_vecs.setdefault(p, unblocked_vecs)
-            
-            for d in all_vecs.items():                                    # DEBUG
+
+            for d in all_vecs.items():                                                  # DEBUG
                 print(d)
-            print(f">>>> {all_vecs[piece]}")
+            print(f">>>> {all_vecs[piece]}")                                            # DEBUG
+
+
 
             if all_vecs[piece] == []:
                 print(f"{piece} can't go anywhere")
                 continue
 
+            # STAGE 3.1:        Checking if move creates KING CHECKED
+
+
+
+
             # STAGE 3.2:        Highlight Possible Moves        
-            test_board = deepcopy(board)                            # DEBUG 
+            test_board = deepcopy(board)                                                # DEBUG 
             highlight_viable_mvs(all_vecs[piece], test_board, oy, ox)
 
             # STAGE 4:          Player Declares Destination
@@ -321,14 +365,14 @@ def main():
                 if belongs_to_player(board, current_player, ny, nx):
                     print(
                         f"{piece} cant mv to {destination.upper()}, one of ur pieces on there"
-                        )                                                   # DEBUG
+                        )                                                               # DEBUG
                     continue
 
             vecy = ny - oy 
             vecx = nx - ox
 
             if (vecy, vecx) not in all_vecs[piece]:
-                print(f"{piece} cannot move there!")                        # DEBUG
+                print(f"{piece} cannot move there!")                                    # DEBUG
                 continue
 
 
@@ -339,8 +383,9 @@ def main():
                 captured_pieces[current_player].append(capture)                
             
             for i in captured_pieces[current_player]:
-                print(i, end=' ')                             # DEBUG
+                print(i, end=' ')                                                       # DEBUG
 
+            if king_check(board, )
 
             # STAGE 5
             # TODO: create a func that checks if king_checked
