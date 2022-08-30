@@ -116,7 +116,7 @@ def belongs_to_player(board: ChessArray, player_color: str, y: int, x: int) -> b
 def get_vecs_on_mt_board(board: ChessArray, piece: Piece, oy: int, ox: int,
     ) -> dict:
     """ Returns all possible vectors the given piece has on a empty board
-        values are sorted by directions. Each inner list is is in ascending order. """
+        values are sorted by directions spreading from piece origin"""
     
     piece_vectors = {piece: []}
     vectors = piece.my_vectors()
@@ -126,29 +126,25 @@ def get_vecs_on_mt_board(board: ChessArray, piece: Piece, oy: int, ox: int,
         for s in range(1, piece.range + 1):
             y = v[0] * s
             x = v[1] * s
+
+            testy, testx = oy + y, ox + x
             
-            if ox + x < 0 or oy + y < 0:
+            if testy < 0 or testx < 0:
                 # if x is negative it wraps around list
                 break
 
-            if ox + x > 7 or oy + y > 7:
-                break
-
-            try:
-                if board[oy + y][ox + x]:
-                    pass
-            except IndexError:
+            if testy > 7 or testx > 7:
+                # IndexError happens
                 break
 
             direction.append((y, x))
 
         if direction != []:
             piece_vectors[piece].append(direction)
-
     return piece_vectors
 
 def get_unblocked_vecs(board: ChessArray, vectors: list[list[Vector,]],  
-    oy: int, ox: int
+    oy: int, ox: int, piece: Piece
     ) -> list[Vector,]:
     """ Check which vectors are unblocked from the given all_free_vectors list
         the given input should look this : [[(...),(...)], [(...),(...)], ... ]
@@ -162,18 +158,17 @@ def get_unblocked_vecs(board: ChessArray, vectors: list[list[Vector,]],
             testy, testx = oy + vecy, ox + vecx
             test_tile = board[testy][testx]
 
-            if testx < 0 or testy < 0:
-                # dont check for negative idx 
-                continue
-
             if test_tile == '<>':
                 unblocked_vectors.append(vec)
                 continue 
             
             if test_tile.color == board[oy][ox].color:
                 break
-                
-            elif test_tile.color != board[oy][ox].color:
+
+            if test_tile.name == 'Pawn':
+                break
+
+            if test_tile.color != board[oy][ox].color:
                 unblocked_vectors.append(vec)
                 # cut off here because piece behind them cant be captured
                 break
@@ -184,28 +179,37 @@ def get_unblocked_vecs(board: ChessArray, vectors: list[list[Vector,]],
     return unblocked_vectors
         
 def get_pawn_diagonals(board: ChessArray, piece: Piece, oy: int, ox: int) -> list[Vector,]:
-    """Returns list of possible capture vectors for a Pawn"""
+    """ Important that this function runs after get_unblocked_vecs"""
     capture_vectors = piece.capture_vectors()
     vecs = []
     for cv in capture_vectors:
+        testy, testx = oy + cv[0], ox + cv[1]
         try:
-            newpos = board[oy + cv[0]][ox + cv[1]]
+            newpos = board[testy][testx]
         except IndexError:
             continue
+
+        if testy < 0 or testy < 0:
+            # dont check for negative indexes 
+            break
+        
+        if testy > 7 or testx > 7:
+            # IndexError
+            break
 
         if newpos == '<>':
             continue
         
         elif newpos.color != piece.color:
             vecs.append(cv)
-        
+
         else:
             print('Something happend in get_pawn_diagonals()')                    # DEBUG
+
     return vecs
 
 def all_unblocked_vecs(board) -> dict[Piece, list[Vector]]:
     """ """
-    # TODO: Something wrong with Pawns they can capture when the move forward
     all_vecs = {}
     for y, row in enumerate(board):
         for x, tile in enumerate(row):
@@ -215,7 +219,7 @@ def all_unblocked_vecs(board) -> dict[Piece, list[Vector]]:
             p = board[y][x]
 
             piece_vectors = get_vecs_on_mt_board(board, p, y, x)
-            unblocked_vecs = get_unblocked_vecs(board, piece_vectors[p], y, x)
+            unblocked_vecs = get_unblocked_vecs(board, piece_vectors[p], y, x, p)
 
             
             if p.name == 'Pawn':
@@ -238,9 +242,9 @@ def get_piece_idx(board: ChessArray, piece) -> tuple[int, int]:
 
 def king_check(board: ChessArray, color: str, all_vecs: dict, king_pos: tuple[int, int]) -> bool:
     """ check if the given KING w/ COLOR is checked by the OPPOSITE COLOR"""
+    # BUG: Doesnt Work somehow
     for k, v in all_vecs.items():
-        if k.color == color.lower() or v == []:
-            # v == [] means cant move
+        if k.color == color.lower():
             continue
 
         for vec in v:
