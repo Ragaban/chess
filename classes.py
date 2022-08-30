@@ -14,7 +14,7 @@ class Piece:
     vec = []
     def __init__(self, color: str):
         self.color = color
-        self.first_mv: bool = False
+        self.first_mv = False
 
     def __str__(self):
         return  self.color[0] + self.name[0]
