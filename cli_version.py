@@ -1,5 +1,6 @@
 from copy import deepcopy
 from typing import TypeAlias
+from csv import reader
 from classes import Piece, King, Queen, Bishop, Knight, Rook, Pawn
 
 # vars
@@ -9,30 +10,45 @@ ChessArray: TypeAlias = list[list[Piece | str],]
 
 # functions
 def get_start_board() -> ChessArray:
-    # TODO: Rework loading the board and
     """ creates start board """
-    board = [
-        [
-            Rook('black'), Knight('black'), Bishop('black'), Queen('black'),
-            King('black'), Bishop('black'), Knight('black'), Rook('black')
-        ],
-        [
-            Pawn('black'), Pawn('black'), Pawn('black'), Pawn('black'),
-            Pawn('black'), Pawn('black'), Pawn('black'), Pawn('black')
-        ],
-            ['<>','<>','<>','<>','<>','<>','<>','<>'],
-            ['<>','<>','<>','<>','<>','<>','<>','<>'],                                                              
-            ['<>','<>','<>','<>','<>','<>','<>','<>'],
-            ['<>','<>','<>','<>','<>','<>','<>','<>'],
-        [
-            Pawn('white'), Pawn('white'), Pawn('white'), Pawn('white'),
-            Pawn('white'), Pawn('white'), Pawn('white'), Pawn('white')
-        ],
-        [
-            Rook('white'), Knight('white'), Bishop('white'), Queen('white'),
-            King('white'), Bishop('white'), Knight('white'), Rook('white')
-        ],
-    ]
+    board = []
+
+    with open('Chess Board.csv') as csvfile:
+        tables = reader(csvfile)
+        for row in tables:
+            if len(row) > 8:
+                row = row[:8]
+            board.append(row)
+
+    for y, row in enumerate(board):
+        for x, tile in enumerate(row):
+            if tile == '':   
+                board[y][x] = '<>'
+                continue
+
+            if tile[0] == 'w':          
+                col = 'white'
+            elif tile[0] == 'b':        
+                col = 'black'
+
+            if tile[1] == 'P':      
+                board[y][x] = Pawn(col)
+                continue
+            elif tile[1] == 'R':    
+                board[y][x] = Rook(col)
+                continue
+            elif tile[1] == 'N':    
+                board[y][x] = Knight(col)
+                continue
+            elif tile[1] == 'B':    
+                board[y][x] = Bishop(col)
+                continue
+            elif tile[1] == 'Q':    
+                board[y][x] = Queen(col)
+                continue
+            elif tile[1] == 'K':    
+                board[y][x] = King(col)
+                continue
     return board
 
 def draw_board(board) -> None:
