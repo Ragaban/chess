@@ -9,8 +9,8 @@ Vector: TypeAlias = tuple[int, int]
 ChessArray: TypeAlias = list[list[Piece | str],]
 
 # functions
-def get_start_board() -> ChessArray:
-    """ creates start board """
+def generate_board() -> ChessArray:
+    """ Read a csv file that holds the board state and generates the board"""
     board = []
 
     with open('Chess Board.csv') as csvfile:
@@ -51,7 +51,7 @@ def get_start_board() -> ChessArray:
                 continue
     return board
 
-def draw_board(board) -> None:
+def draw_board(board):
     """ print out chess board in a nice way """
     print(end='\n\n\n')
     print( padding + ' A  B  C  D  E  F  G  H')
@@ -114,7 +114,11 @@ def lst_idx_to_chess(idx: tuple[int, int]) -> str:
     return f"{x.upper()}{y}"
 
 # Piece funcs
-def belongs_to_player(board: ChessArray, player_color: str, y: int, x: int) -> bool:
+def belongs_to_player(
+    board: ChessArray, 
+    player_color: str, 
+    y: int, x: int
+) -> bool:
     """ Checks if given item in array belongs to given player."""
     if board[y][x] == '<>':
         return False
@@ -129,8 +133,11 @@ def belongs_to_player(board: ChessArray, player_color: str, y: int, x: int) -> b
         print("Something happend w/ belongs_to_player()")                   # DEBUG      
 
 # These three are linked
-def get_vecs_on_mt_board(board: ChessArray, piece: Piece, oy: int, ox: int,
-    ) -> dict:
+def get_vecs_on_mt_board(
+    piece: Piece, 
+    oy: int, 
+    ox: int,
+) -> dict:
     """ Returns all possible vectors the given piece has on a empty board
         values are sorted by directions spreading from piece origin"""
     
@@ -159,9 +166,13 @@ def get_vecs_on_mt_board(board: ChessArray, piece: Piece, oy: int, ox: int,
             piece_vectors[piece].append(direction)
     return piece_vectors
 
-def get_unblocked_vecs(board: ChessArray, vectors: list[list[Vector,]],  
-    oy: int, ox: int, piece: Piece
-    ) -> list[Vector,]:
+def get_unblocked_vecs(
+    board: ChessArray, 
+    vectors: list[list[Vector,]],  
+    oy: int, 
+    ox: int, 
+    piece: Piece
+) -> list[Vector,]:
     """ Check which vectors are unblocked from the given all_free_vectors list
         the given input should look this : [[(...),(...)], [(...),(...)], ... ]
         each inner list represents a directions"""
@@ -174,6 +185,13 @@ def get_unblocked_vecs(board: ChessArray, vectors: list[list[Vector,]],
             testy, testx = oy + vecy, ox + vecx
             test_tile = board[testy][testx]
 
+            # Special Knights Case
+            if piece.name == 'Knight':
+                if test_tile != '<>' and test_tile.color != piece.color:
+                    unblocked_vectors.append(vec)
+                    continue
+
+            # The other Pieces
             if test_tile == '<>':
                 unblocked_vectors.append(vec)
                 continue 
@@ -194,7 +212,12 @@ def get_unblocked_vecs(board: ChessArray, vectors: list[list[Vector,]],
 
     return unblocked_vectors
         
-def get_pawn_diagonals(board: ChessArray, piece: Piece, oy: int, ox: int) -> list[Vector,]:
+def get_pawn_diagonals(
+    board: ChessArray, 
+    piece: Piece, 
+    oy: int, 
+    ox: int
+) -> list[Vector,]:
     """ Important that this function runs after get_unblocked_vecs"""
     capture_vectors = piece.capture_vectors()
     vecs = []
@@ -234,16 +257,17 @@ def all_unblocked_vecs(board) -> dict[Piece, list[Vector]]:
 
             p = board[y][x]
 
-            piece_vectors = get_vecs_on_mt_board(board, p, y, x)
+            piece_vectors = get_vecs_on_mt_board(p, y, x)
             unblocked_vecs = get_unblocked_vecs(board, piece_vectors[p], y, x, p)
 
-            
             if p.name == 'Pawn':
                 # Pawns Capture Vecs
                 cap_vectors = get_pawn_diagonals(board, p, y, x)
 
                 if cap_vectors != []:
                     unblocked_vecs += cap_vectors
+
+            
 
             all_vecs.setdefault(p, unblocked_vecs)
 
@@ -256,7 +280,12 @@ def get_piece_idx(board: ChessArray, piece) -> tuple[int, int]:
             if piece == tile:
                 return y, x
 
-def king_check(board: ChessArray, color: str, all_vecs: dict, king_pos: tuple[int, int]) -> bool:
+def king_check(
+    board: ChessArray, 
+    color: str, 
+    all_vecs: dict, 
+    king_pos: tuple[int, int]
+) -> bool:
     """ check if the given KING w/ COLOR is checked by the OPPOSITE COLOR"""
     # BUG: Doesnt Work somehow
     for k, v in all_vecs.items():
@@ -271,23 +300,14 @@ def king_check(board: ChessArray, color: str, all_vecs: dict, king_pos: tuple[in
 
     return False
 
-    
-
-
-
-
-
-
-
-
-
-
-
 
 # Board funcs
-def highlight_viable_mvs(vectors: tuple[Vector,...], board: ChessArray,
-    y: int, x: int,
-    ) -> None:
+def highlight_viable_mvs(
+    vectors: tuple[Vector,...], 
+    board: ChessArray,
+    y: int, 
+    x: int,
+) -> None:
     """ fills all possible tiles where piece can move with XX's
     this function is used later for the GUI"""
     for vector in vectors:
@@ -295,7 +315,15 @@ def highlight_viable_mvs(vectors: tuple[Vector,...], board: ChessArray,
         board[y + vecy][x + vecx] = "XX"
     draw_board(board)
 
-def move_piece(board: ChessArray, ny: int, nx: int, oy: int, ox: int) -> Piece | None:
+def move_piece(
+    board: ChessArray, 
+    ny: int, 
+    nx: int, 
+    oy: int, 
+    ox: int
+) -> Piece | None:
+    """ Moves 2 elements on the board. 
+        If capture happens 1 piece is replaced with empty field '<>'"""
     board[ny][nx], board[oy][ox] = board[oy][ox], board[ny][nx]
     if board[oy][ox] == '<>':
         return None
@@ -307,7 +335,7 @@ def move_piece(board: ChessArray, ny: int, nx: int, oy: int, ox: int) -> Piece |
 
 def main():
     # STAGE 0: Setup
-    board = get_start_board()
+    board = generate_board()
     captured_pieces = {'White': [], 'Black': []}
     
     while True:
@@ -361,12 +389,7 @@ def main():
                     else:
                         black_king_pos = get_piece_idx(board, p)
 
-
-
-
-
-
-
+            # Running Throught all ally vecs 
 
 
             # STAGE 3.2:        Highlight Possible Moves        
