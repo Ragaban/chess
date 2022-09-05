@@ -231,14 +231,12 @@ def get_pawn_diagonals(
         if testy < 0 or testy < 0:
             # dont check for negative indexes 
             break
-        
         if testy > 7 or testx > 7:
             # IndexError
             break
 
         if newpos == '<>':
             continue
-        
         elif newpos.color != piece.color:
             vecs.append(cv)
 
@@ -337,7 +335,6 @@ def main():
     # STAGE 0: Setup
     board = generate_board()
     captured_pieces = {'White': [], 'Black': []}
-    
     while True:
         turn_counter = 1            
         while True:
@@ -358,6 +355,7 @@ def main():
                 
                 if ipt_checker(selected_tile):
                     if selected_tile[0].isdigit(): 
+                        # formatting e.g: 4A -> A4
                         selected_tile = selected_tile[1] + selected_tile[0]
                     break
 
@@ -388,6 +386,7 @@ def main():
                         white_king_pos = get_piece_idx(board, p)
                     else:
                         black_king_pos = get_piece_idx(board, p)
+
 
             # Running Throught all ally vecs 
 
@@ -444,6 +443,7 @@ def main():
             
             if king_check(board, opposite_player, all_vecs, king_pos):
                 print("KING IS CHECKED")
+
 
             # STAGE 5
             # TODO: create a func that checks if king_checked
