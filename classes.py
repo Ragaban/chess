@@ -25,7 +25,6 @@ class Piece:
     def my_vectors(self):
         return self.vec
  
-
 class King(Piece):
     name: str = "King"
     range: int = 1

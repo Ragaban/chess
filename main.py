@@ -53,7 +53,6 @@ def generate_board() -> ChessArray:
                 continue
     return board
 
-
 def main():
     pygame.init()
     pygame.display.set_caption("Chess")
