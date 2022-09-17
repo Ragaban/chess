@@ -91,3 +91,17 @@ class Knight(Piece):
 
     def __str__(self):
         return f"{self.color[0]}{self.name[1].upper()}"
+
+class Empty():
+    name: str = 'empty'
+    color = None
+
+    def __str__(self):
+        return '<>'
+
+class Marked():
+    name: str = 'XX'
+    color = None
+
+    def __str__(self):
+        return self.name

@@ -1,15 +1,12 @@
-from classes import Piece, King, Queen, Bishop, Knight, Rook, Pawn
+from classes import Piece, King, Queen, Bishop, Knight, Rook, Pawn, Empty, Marked
 from csv import reader
 from typing import TypeAlias
 import sys, pygame
 
 Vector: TypeAlias = tuple[int, int]
 ChessArray: TypeAlias = list[list[Piece | str],]
-SIZE = (1200, 720)
-
-
-
-
+SIZE = (800, 600)
+TILE_SIZE = (64, 64)
 
 def generate_board() -> ChessArray:
     """ Read a csv file that holds the board state and generates the board"""
@@ -61,8 +58,14 @@ def main():
     board = generate_board()
 
     brown_sqr = pygame.image.load("assets/128h/square brown dark_png_128px.png")
-    brown_sqr = pygame.transform.scale(brown_sqr, (64, 64))
+    brown_sqr = pygame.transform.scale(brown_sqr, TILE_SIZE)
+    gray_sqr = pygame.image.load("assets/128h/square gray light _png_128px.png")
+    gray_sqr = pygame.transform.scale(brown_sqr, TILE_SIZE)
+
+
     b_bishop = pygame.image.load("assets/128h/b_bishop_png_128px.png")
+    b_bishop = pygame.transform.scale(b_bishop, TILE_SIZE)
+
 
     # GAME LOOP
     while True:
@@ -70,6 +73,14 @@ def main():
             print(event)
             if event.type == pygame.QUIT:
                 sys.exit()
+            
+            for y, row in enumerate(board):
+                for x, col in enumerate(row):
+                    if x % 2 == 0:
+                        screen.blit(gray_sqr, (64 * y, 64 * x))
+                    if x % 2 == 1:
+                        screen.blit(brown_sqr, (64 * y, 64 * x))
+                        
 
 
             pygame.display.flip()       # update screen
