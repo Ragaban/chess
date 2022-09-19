@@ -12,9 +12,10 @@ ChessArray: TypeAlias = list[list[Piece | Empty],]
 # functions
 def generate_board() -> ChessArray:
     """ Read a csv file that holds the board state and generates the board"""
+    # TODO: check for corrupted conditions -> if tile[1] == '?' what then
     board = []
 
-    with open('PawnDiag.csv') as csvfile:           # OG FILE NAME 'Chess Board.csv'
+    with open('King Checked.csv') as csvfile:           # OG FILE NAME 'Chess Board.csv'
         tables = reader(csvfile)
         for row in tables:
             if len(row) > 8:
@@ -121,7 +122,7 @@ def belongs_to_player(
     y: int, x: int
 ) -> bool:
     """ Checks if given item in array belongs to given player."""
-    if board[y][x] == '<>':
+    if board[y][x].name == 'empty':
         return False
 
     elif board[y][x].color != player_color.lower():
@@ -129,58 +130,29 @@ def belongs_to_player(
 
     elif board[y][x].color == player_color.lower():
         return True
-    
 
-# These three are linked
-# # def get_vecs_on_mt_board(
-#     piece: Piece, 
-#     oy: int, 
-#     ox: int,
-# ) -> dict:
-#     """ Returns all possible vectors the given piece has on a empty board
-#         values are sorted by directions spreading from piece origin"""
-    
-#     piece_vectors = {piece: []}
-#     vectors = piece.my_vectors()
 
-#     for v in vectors:
-#         direction = []
-#         for s in range(1, piece.range):     # piece.range 1-8
-#             y = v[0] * s
-#             x = v[1] * s
-
-#             testy, testx = oy + y, ox + x
-            
-#             if testy < 0 or testx < 0:
-#                 # if x is negative it wraps around list
-#                 break
-
-#             if testy > 7 or testx > 7:
-#                 # IndexError happens
-#                 break
-
-#             direction.append((y, x))
-
-#         if direction != []:
-#             piece_vectors[piece].append(direction)
-#     return piece_vectors
-
-def DRAFT_get_vecs_on_board(board: ChessArray, piece: Piece, oy: int, ox: int):
-    piece_vectors = {piece: []}
+def get_piece_vectors(board: ChessArray, piece: Piece, oy: int, ox: int
+) -> dict[Piece: list[Vector]]:
+    """ This func iterates through the piece vecs and checks which ones are unblocked
+    After this func get_pawn_diag func should run.
+    """
+    # TODO: PAWN can still capture when moving forward when first_mv is True
+    legal_vectors = []
     vectors = piece.my_vectors()
-
+    pawn_flag = False
     for v in vectors:
-        # direction = []
+
         for s in range(1, piece.range + 1):
             y = v[0] * s
             x = v[1] * s
 
             testy, testx = oy + y, ox + x
 
-            if testy < 0 or testx < 0:  # if x is negative it wraps around list
+            if testy < 0 or testx < 0:          # if x is negative it wraps around list
                 break
 
-            if 7 < testy or 7 < testx:  # IndexError happens
+            if 7 < testy or 7 < testx:          # IndexError happens
                 break
 
             test_tile = board[testy][testx]
@@ -188,11 +160,11 @@ def DRAFT_get_vecs_on_board(board: ChessArray, piece: Piece, oy: int, ox: int):
             # KNIGHT CASE
             if piece.name == 'Knight':
                 if test_tile.color != test_tile.color:
-                    piece_vectors[piece].append((y, x))
+                    legal_vectors.append((y, x))
                     continue
 
             if test_tile.name == 'empty':
-                piece_vectors[piece].append((y, x))
+                legal_vectors.append((y, x))
                 continue
 
             if test_tile.color == piece.color:
@@ -202,21 +174,20 @@ def DRAFT_get_vecs_on_board(board: ChessArray, piece: Piece, oy: int, ox: int):
                 break
 
             if test_tile.color != piece.color:
-                piece_vectors[piece].append((y, x))
+                legal_vectors.append((y, x))
                 break
             
             else: print(f"{piece} {(y, x)} something happened")                         # DEBUG
 
 
-    return piece_vectors
+    return {piece: legal_vectors}
         
 def get_pawn_diagonals(
     board: ChessArray, 
     piece: Piece, 
-    oy: int, 
-    ox: int
+    oy: int, ox: int
 ) -> list[Vector,]:
-    """ Important that this function runs after get_unblocked_vecs"""
+    """ This func runs after get_piece_vectors because of the Pawn diag vectors"""
     capture_vectors = piece.capture_vectors()
     vecs = []
     for cv in capture_vectors:
@@ -253,14 +224,14 @@ def king_check(
     all_vecs: dict, 
     king_pos: tuple[int, int]
 ) -> bool:
-    """ check if the given KING w/ COLOR is checked by the OPPOSITE COLOR"""
+    """ Checks if the given KING w/ COLOR is checked by the OPPOSITE COLOR"""
     # BUG: Doesnt Work somehow
-    for k, v in all_vecs.items():
-        if k.color == color.lower():
+    for piece, vecs in all_vecs.items():
+        if piece.color == color.lower():
             continue
 
-        for vec in v:
-            y, x = get_piece_idx(board, k)
+        for vec in vecs:
+            y, x = get_piece_idx(board, piece)
 
             if (y + vec[0], x + vec[1]) == king_pos:
                 return True
@@ -292,7 +263,7 @@ def move_piece(
     """ Moves 2 elements on the board. 
         If capture happens 1 piece is replaced with empty field '<>'"""
     board[ny][nx], board[oy][ox] = board[oy][ox], board[ny][nx]
-    if board[oy][ox] == '<>':
+    if board[oy][ox].name == 'empty':
         return None
     captured_piece = board[oy].pop(ox)
     board[oy].insert(ox, Empty())
@@ -313,7 +284,6 @@ def main():
             if turn_counter % 2 == 1: 
                 current_player = 'White'
                 opposite_player = 'Black'
-            # odd = White / even = Black
             else: 
                 current_player = 'Black'
                 opposite_player = 'White'
@@ -335,50 +305,45 @@ def main():
             
             piece: Piece = board[oy][ox]
 
-
             # STAGE 3:          Get All Vectors of All Pieces
             all_vecs = {}
             for _y, row in enumerate(board):
                 for _x, tile in enumerate(row):
-                    # _y, _x are just needed for this for loop
                     if tile.name == 'empty':
                         continue
 
                     if tile.name == 'King':
-                        # USED FOR LATER
+                        # USED FOR LATER when checking CHECK/CHECKMATE
                         if tile.color == 'white':
                             white_king_pos = _y, _x
                         else:
                             black_king_pos = _y, _x
                     
                     p = board[_y][_x]
-                    p_vecs = DRAFT_get_vecs_on_board(board, p, _y, _x)
+                    p_vecs = get_piece_vectors(board, p, _y, _x)
 
                     if p.name == 'Pawn':
                         # Pawns Capture Vecs
                         cap_vectors = get_pawn_diagonals(board, p, _y, _x)
-
                         if cap_vectors != []:
                             for cv in cap_vectors:
                                 p_vecs[p].append(cv)
 
                     all_vecs.update(p_vecs)
 
+
             for k, v in all_vecs.items():                                               # DEBUG
                 print(k.name + ' ' + k.color.upper(), end= ', ')                        #    
                 print(v)                                                                #
-            print(f"{piece} >>>> {all_vecs[piece]}")                                            # DEBUG
-
+            print(f"{piece} >>>> {all_vecs[piece]}")                                    # DEBUG
 
             if all_vecs[piece] == []:
                 print(f"{piece} can't go anywhere")
                 continue
 
-
-            # STAGE 3.1:        Checking if move creates KING CHECKED
-            # Getting King Positions    
+            # STAGE 3.1:        Move Legality: Does MOVE create self check?
             # Running Throught all ally vecs 
-            # TODO:
+
 
 
 
@@ -414,9 +379,8 @@ def main():
             vecx = nx - ox
 
             if (vecy, vecx) not in all_vecs[piece]:
-                print(f"{piece} cannot move there!")                                    # DEBUG
+                print(f"{piece} cannot move there!")
                 continue
-
 
             # STAGE 6:          Move and Capture
             capture = move_piece(board, ny, nx, oy, ox)
@@ -434,7 +398,6 @@ def main():
             
             if king_check(board, opposite_player, all_vecs, king_pos):
                 print("KING IS CHECKED")
-
 
             # Stage 10:          End Step 
             if not piece.first_mv:
