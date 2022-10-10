@@ -63,9 +63,6 @@ def main():
     gray_sqr = pygame.image.load("assets/128h/square gray light _png_128px.png")
     gray_sqr = pygame.transform.scale(brown_sqr, TILE_SIZE)
 
-
-
-
     b_bishop = pygame.image.load("assets/128h/b_bishop_png_128px.png")
     b_bishop = pygame.transform.scale(b_bishop, TILE_SIZE)
 

@@ -15,7 +15,7 @@ def generate_board() -> ChessArray:
     # TODO: check for corrupted conditions -> if tile[1] == '?' what then
     board = []
 
-    with open('King Checked.csv') as csvfile:           # OG FILE NAME 'Chess Board.csv'
+    with open('Chess Board.csv') as csvfile:           # OG FILE NAME 'Chess Board.csv'
         tables = reader(csvfile)
         for row in tables:
             if len(row) > 8:
@@ -132,85 +132,51 @@ def belongs_to_player(
         return True
 
 
-def get_piece_vectors(board: ChessArray, piece: Piece, oy: int, ox: int
-) -> dict[Piece: list[Vector]]:
-    """ This func iterates through the piece vecs and checks which ones are unblocked
-    After this func get_pawn_diag func should run.
-    """
-    # TODO: PAWN can still capture when moving forward when first_mv is True
+def get_piece_vectors(board: ChessArray, piece: Piece, oy: int, ox: int) -> list[Vector]:
     legal_vectors = []
-    vectors = piece.my_vectors()
-    pawn_flag = False
-    for v in vectors:
+    piece_vecs = piece.my_vectors()
+    if piece.name == 'Pawn':
+        cap_vec = piece.capture_vectors()
 
-        for s in range(1, piece.range + 1):
-            y = v[0] * s
-            x = v[1] * s
+    for vec in piece_vecs:
+        for step in range(1, piece.range + 1):
+            ny = step * vec[0]
+            nx = step * vec[1]
+            testy, testx = oy + ny, ox + nx
 
-            testy, testx = oy + y, ox + x
-
-            if testy < 0 or testx < 0:          # if x is negative it wraps around list
-                break
-
-            if 7 < testy or 7 < testx:          # IndexError happens
-                break
-
-            test_tile = board[testy][testx]
-
-            # KNIGHT CASE
-            if piece.name == 'Knight':
-                if test_tile.color != test_tile.color:
-                    legal_vectors.append((y, x))
-                    continue
-
-            if test_tile.name == 'empty':
-                legal_vectors.append((y, x))
-                continue
-
-            if test_tile.color == piece.color:
-                break
-
-            if test_tile.name == 'Pawn':        # after testing name and color
-                break
-
-            if test_tile.color != piece.color:
-                legal_vectors.append((y, x))
+            if testy < 0 or testx < 0:          # wraps around list
+                break       
+            if testy > 7 or testx > 7:          # 8 or higher -> IndexError 
                 break
             
-            else: print(f"{piece} {(y, x)} something happened")                         # DEBUG
+            test_tile = board[testy][testx]
 
+            # Knight Special Case
+            if piece.name == 'Knight':
+                if piece.color != test_tile.color:
+                    legal_vectors.append((ny, nx))
+                    continue
+                
+            if test_tile.name != 'empty':                   # next tile not empty
+                if piece.color != test_tile.color:              # AND diff color
+                    if piece.name == 'Pawn':                        # BUT Pawn cant capture
+                        break                                           # next direction
+                    legal_vectors.append((ny, nx))               # capture enemy
+                    break                                           # next direction
+                else:                                           # AND same color
+                    break                                           # next direction
+
+            if test_tile.name == 'empty':
+                legal_vectors.append((ny, nx))
+                continue
+            
+    #TODO Pawn Capture Vectors
 
     return {piece: legal_vectors}
-        
-def get_pawn_diagonals(
-    board: ChessArray, 
-    piece: Piece, 
-    oy: int, ox: int
-) -> list[Vector,]:
-    """ This func runs after get_piece_vectors because of the Pawn diag vectors"""
-    capture_vectors = piece.capture_vectors()
-    vecs = []
-    for cv in capture_vectors:
-        testy, testx = oy + cv[0], ox + cv[1]
 
-        if 0 > testy or 0 > testx:
-            # dont check for negative indexes 
-            break
-        if 7 < testy or 7 < testx :
-            # IndexError
-            break
 
-        tile = board[testy][testx]
-        if tile.name == 'empty':
-            continue
 
-        if tile.color != piece.color:
-            vecs.append(cv)
 
-        else:
-            print('Something happend in get_pawn_diagonals()')                    # DEBUG
-    return vecs
-  
 def get_piece_idx(board: ChessArray, piece) -> tuple[int, int]:
     """ Returns the coord of a piece."""
     for y, row in enumerate(board):
@@ -276,7 +242,8 @@ def main():
     board = generate_board()
     captured_pieces = {'White': [], 'Black': []}
     while True:
-        turn_counter = 1            
+        turn_counter = 1
+        last_moves = []   
         while True:
             # STAGE 1:          Turn Starts
             draw_board(board)
@@ -307,27 +274,21 @@ def main():
 
             # STAGE 3:          Get All Vectors of All Pieces
             all_vecs = {}
-            for _y, row in enumerate(board):
-                for _x, tile in enumerate(row):
+            for y, row in enumerate(board):
+                for x, tile in enumerate(row):
                     if tile.name == 'empty':
                         continue
 
                     if tile.name == 'King':
                         # USED FOR LATER when checking CHECK/CHECKMATE
                         if tile.color == 'white':
-                            white_king_pos = _y, _x
+                            white_king_pos = y, x
                         else:
-                            black_king_pos = _y, _x
+                            black_king_pos = y, x
                     
-                    p = board[_y][_x]
-                    p_vecs = get_piece_vectors(board, p, _y, _x)
+                    p = board[y][x]
+                    p_vecs = get_piece_vectors(board, p, y, x)
 
-                    if p.name == 'Pawn':
-                        # Pawns Capture Vecs
-                        cap_vectors = get_pawn_diagonals(board, p, _y, _x)
-                        if cap_vectors != []:
-                            for cv in cap_vectors:
-                                p_vecs[p].append(cv)
 
                     all_vecs.update(p_vecs)
 
@@ -367,7 +328,7 @@ def main():
 
             ny, nx = chess_idx_to_lst(destination)
             
-            # STAGE 5:          Check Move Legality
+            # STAGE 5:          Check Move Legality         # TODO: Redundant? coz of func get_piece_vectors
             if hasattr(piece, "jumps"):
                 if belongs_to_player(board, current_player, ny, nx):
                     print(
@@ -396,13 +357,17 @@ def main():
             else: 
                 king_pos = white_king_pos
             
+
+
             if king_check(board, opposite_player, all_vecs, king_pos):
                 print("KING IS CHECKED")
+
 
             # Stage 10:          End Step 
             if not piece.first_mv:
                 piece.made_first_move()
 
+            last_moves.append(((oy, ox), (ny, nx)))         # used to revert moves
             turn_counter += 1
 
         break

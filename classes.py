@@ -68,15 +68,15 @@ class Pawn(Piece):
         if self.color == 'white':       
             self.direction = -1       # White move direction
 
-        self.vec: tuple[Vector,...] = [(1 * self.direction, 0),]    
+        self.vec: tuple[Vector] = [(self.direction, 0)]    
 
     def made_first_move(self):
         self.range = 1
-        self.first_mv = True 
+        self.first_mv = True
 
-    def capture_vectors(self) -> list[Vector,]:
+    def capture_vectors(self) -> list[Vector]:
         """ return the capture vecs with respective direction"""
-        return [(1 * self.direction, 1), (1 * self.direction, -1)]
+        return [(self.direction, 1), (self.direction, -1)]
     
 
 class Knight(Piece):
