@@ -2,13 +2,6 @@ from typing import TypeAlias
 
 Vector: TypeAlias = tuple[int, int]
 
-
-# class Player:
-#     # games = {"wins": 0, "loses": 0}
-#     def __init__(self, color: str, captures: list):
-#         self.color = color
-#         self.captures = captures
-
 class Piece:
     """ self.vec = (y, x). """
     vec = []
