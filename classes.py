@@ -4,7 +4,6 @@ Vector: TypeAlias = tuple[int, int]
 
 class Piece:
     """ self.vec = (y, x). """
-    vec = []
     def __init__(self, color: str):
         self.color = color
         self.first_mv = False

@@ -10,8 +10,6 @@ Vector: TypeAlias = tuple[int, int]
 ChessArray: TypeAlias = list[list[Piece | Empty],]
 
 
-
-
 # functions
 def generate_board(board) -> ChessArray:
     """ Read a csv file that holds the board state and generates the board"""
@@ -87,12 +85,14 @@ def belongs_to_player(player_color: str, piece: Piece) -> bool:
     elif piece.color != player_color.lower():
         return False
 
-def discard_vecs_outside_board(piece: Piece, pos_y: int, pos_x: int) -> list[Vector]:
+def discard_vecs_outside_board(piece: Piece, pos_y: int, pos_x: int
+)-> list[Vector]:
     """ Vectors that lead out of board are discarded """
     vectors = []        # all possible vectors on an empty board
     piece_vecs = piece.my_vectors()
     for vec in piece_vecs:
-        for step in range(1, piece.range + 1):
+        step = 1
+        while step <= piece.range:
             vec_y = step * vec[0]
             vec_x = step * vec[1]
 
@@ -102,6 +102,7 @@ def discard_vecs_outside_board(piece: Piece, pos_y: int, pos_x: int) -> list[Vec
                 break
 
             vectors.append((vec))
+            step += 1
     return vectors
 
 def test_vectors(board: ChessArray, pos_y, pos_x, vecs) -> list[Vector]:
@@ -201,6 +202,10 @@ def main():
             # STAGE 1.1:          Turn Starts
             draw_board(board)
             
+            current_player = 'White' if turn_counter & 2 == 1 else 'Black'
+            current_player = 'Black' if current_player == 'White' else 'White'
+
+
             if turn_counter % 2 == 1: 
                 current_player = 'White'
                 opposite_player = 'Black'
