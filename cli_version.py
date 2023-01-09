@@ -12,7 +12,8 @@ ChessArray: TypeAlias = list[list[Piece | Empty],]
 
 # functions
 def generate_board(board) -> ChessArray:
-    """ Read a csv file that holds the board state and generates the board"""
+    """ This func reads a csv file that holds the board state and generates the board."""
+    # DONE
     piece_map = {'P': Pawn, 'R': Rook, 'N': Knight, 'B': Bishop, 'Q': Queen, 'K': King, '': Empty}
     for y, row in enumerate(board):
         for x, tile in enumerate(row):
@@ -25,37 +26,32 @@ def generate_board(board) -> ChessArray:
             elif tile[0] == 'b':        
                 color = 'black'
 
-            board[y][x] = piece_map[tile[1]](color)
-
+            board[y][x] = piece_map[tile[1]](color)     # Piece(color)
     return board
 
 def draw_board(board):
-    """ print out chess board in a nice way """
+    """ print out chess board in a nice way."""
+    # DONE
     print(end='\n\n\n')
-    print(PADDING + ' A  B  C  D  E  F  G  H')
+    upper_label = A  B  C  D  E  F  G  H          # This is all just formatting 
+    print(PADDING + '  ' + upper_label)             # Not important
+    print(PADDING + (3 + len(upper_label)) * '-')   #
     row_num = 8
     for row in board:
-        print(PADDING, end='')
+        print(PADDING, end='|')
         for idx, item in enumerate(row):
-            print(item, end=' ')
+            print(f"{item}", end='|')
             if len(row) - idx == 1:
                 print(' ' + str(row_num))
                 row_num -= 1
 
-# Input funcs
-def ipt_checker(string) -> bool:
-    """ Checks if given string matches chess idx. """
-    if len(string) != 2:
-        return False
 
-    if (string.isalnum()
-            and not string.isdigit()
-            and not string.isalpha()
-        ):
-        return True
-    else:
-        print('Something happend with ipt_checker()')
-        return
+# Input funcs
+def is_valid_coordinate(coord: str)-> bool:
+    """this func checks if the unicode number is between the given range
+    so first char needs to be between 'A' - 'H' and second between '1' - '8'
+    """
+    return len(coord) == 2 and 'A' <= coord[0] <= 'H' and '1' <= coord[1] <= '8'
 
 def chess_idx_to_lst(board_pos: str) -> tuple:
     """ Converts chess board index to list index. Given arg needs this form "DIGIT/LETTER" """
@@ -75,6 +71,7 @@ def lst_idx_to_chess(idx: tuple[int, int]) -> str:
     y = 8 - lst_y
     return f"{x.upper()}{y}"
 
+
 # Piece funcs
 def belongs_to_player(player_color: str, piece: Piece) -> bool:
     """ Checks if given item in array belongs to given player."""
@@ -91,24 +88,22 @@ def discard_vecs_outside_board(piece: Piece, pos_y: int, pos_x: int
     vectors = []        # all possible vectors on an empty board
     piece_vecs = piece.my_vectors()
     for vec in piece_vecs:
-        step = 1
-        while step <= piece.range:
+        for step in range(1, piece.range + 1):
             vec_y = step * vec[0]
             vec_x = step * vec[1]
 
-            if pos_y + vec_y < 0 or pos_x + vec_x < 0:          # cycles around list
+            if pos_y + vec_y < 0 or pos_x + vec_x < 0:          # we dont want negative indexes
                 break       
             if pos_y + vec_y > 7 or pos_x + vec_x > 7:          # 8 or higher -> IndexError 
                 break
 
-            vectors.append((vec))
-            step += 1
+            vectors.append((vec[0] * step, vec[1] * step))
+
     return vectors
 
-def test_vectors(board: ChessArray, pos_y, pos_x, vecs) -> list[Vector]:
-    """ Iterates through given vecs and returns list of vecs that are viable"""
+def test_vectors(board: ChessArray, piece, pos_y, pos_x, vecs) -> list[Vector]:
+    """ Iterates through given vecs and returns list of vecs that are viable."""
     possible_vectors = []
-    piece = board[pos_y][pos_x]
     for vec in vecs:
         vec_y, vec_x = vec
         new_pos_y, new_pos_x = pos_y + vec_y, pos_x + vec_x
@@ -145,6 +140,7 @@ def get_piece_idx(board: ChessArray, piece) -> tuple[int, int]:
 
 def king_check(board: ChessArray, color: str, all_vecs: dict, king_pos: tuple[int, int]) -> bool:
     """ Checks if the given KING w/ COLOR is checked by the OPPOSITE COLOR"""
+    # TODO: Not implemented yet needs to recoding
     # BUG: Doesnt Work somehow
     for piece, vecs in all_vecs.items():
         if piece.color == color.lower():
@@ -169,7 +165,7 @@ def highlight_viable_mvs(vectors: tuple[Vector], board: ChessArray,y: int, x: in
 
 def move_piece(board: ChessArray, ny: int, nx: int, oy: int, ox: int) -> Piece | None:
     """ Moves 2 elements on the board. 
-        If capture happens 1 piece is replaced with empty field '<>'"""
+    If capture happens 1 piece is replaced with empty field '<>'"""
     board[ny][nx], board[oy][ox] = board[oy][ox], board[ny][nx]
     if board[oy][ox].name == 'empty':
         return None
@@ -202,16 +198,11 @@ def main():
             # STAGE 1.1:          Turn Starts
             draw_board(board)
             
-            current_player = 'White' if turn_counter & 2 == 1 else 'Black'
-            current_player = 'Black' if current_player == 'White' else 'White'
-
-
             if turn_counter % 2 == 1: 
-                current_player = 'White'
-                opposite_player = 'Black'
+                current_player, opposite_player= 'White', 'Black'
             else:
-                current_player = 'Black'
-                opposite_player = 'White'
+                current_player, opposite_player = 'Black', 'White'
+                
 
             while True:
                 # STAGE 2:          Player Picks Piece
@@ -222,12 +213,13 @@ def main():
                         selected_tile = selected_tile[1] + selected_tile[0]
                     break
 
+            
             oy, ox = chess_idx_to_lst(selected_tile)
             if not belongs_to_player(current_player, board[oy][ox]):
                 print('Invalid target!')
                 continue
-            
             piece: Piece = board[oy][ox]
+
 
             # STAGE 3:          Get All Vectors of All Pieces
             all_vecs = {}
@@ -235,35 +227,43 @@ def main():
                 for pos_x, tile in enumerate(row):
                     if tile.name == 'empty':
                         continue
-                    if tile.name == 'King':
-                        # USED FOR LATER when checking CHECK/CHECKMATE
-                        if tile.color == 'white':
-                            white_king_pos = pos_y, pos_x
-                        else:
-                            black_king_pos = pos_y, pos_x
-                    
-                    curnt_piece = board[pos_y][pos_x]           # curnt == current
-                    curnt_piece_vecs = discard_vecs_outside_board(curnt_piece, pos_y, pos_x)
-                    possible_vecs = test_vectors(board, pos_y, pos_x, curnt_piece_vecs)
-                    all_vecs.update({curnt_piece: possible_vecs})
 
-            for p, v in all_vecs.items():
-                print(f"{p.name}|{p.color.upper()} : {v}")                                                                                                 
+                    # TODO: Bishop moving is bugged c8 bishop wont move only if d7 pawn moved 
+                    # testing -> moved pawn on b7 and c8 bishop cant move then moved d7 pawn 
+                    # and bishop is able to move. Also when c8 bishop was moved to h3 it could not
+                    # move back only take g2 pawn
+
+                    temp_piece = board[pos_y][pos_x]
+
+                    temp_piece_vecs = discard_vecs_outside_board(temp_piece, pos_y, pos_x)
+                    print(f"{temp_piece}: {len(temp_piece_vecs)}")                      # DEBUG
+                    possible_vecs = test_vectors(board, temp_piece, pos_y, pos_x, temp_piece_vecs)
+
+                    all_vecs.update({temp_piece: possible_vecs})
+
+                if isinstance(temp_piece, Bishop):
+                    # Bug with bishhops
+                    print(temp_piece_vecs)
+                    print(possible_vecs)
+
+
+            for p, v in all_vecs.items():                                               # DEBUG 
+                print(f"{p.name}|{p.color.upper()} : {v}")                                                                                                
 
             if all_vecs[piece] == []:
                 print(f"{piece} can't go anywhere")
                 continue
 
             # STAGE 3.1:        Move Legality: Does MOVE create self check?
-            # Running Throught all ally vecs 
+
+
             # STAGE 3.2:        Highlight Possible Moves        
-            copied_board = deepcopy(board)                                                # DEBUG 
+            copied_board = deepcopy(board)                                               # DEBUG 
             highlight_viable_mvs(all_vecs[piece], copied_board, oy, ox)
 
             # STAGE 4:          Player Declares Destination
             while True:
                 destination = input(f'Move {piece} ({selected_tile.upper()}) to: ')
-
                 if ipt_checker(destination):
                     if destination[0].isdigit():
                         destination = destination[1] + destination[0]
@@ -276,7 +276,7 @@ def main():
 
             ny, nx = chess_idx_to_lst(destination)
             
-            # STAGE 5:          Check Move Legality         # TODO: Redundant? coz of func get_piece_vectors
+            # STAGE 5:          Check Move Legality
             if hasattr(piece, "jumps"):
                 if belongs_to_player(current_player, board[ny][nx]):
                     print(
@@ -291,24 +291,21 @@ def main():
                 print(f"{piece} cannot move there!")
                 continue
 
+
+
+
+
             # STAGE 6:          Move and Capture
             capture = move_piece(board, ny, nx, oy, ox)
 
             if capture is not None:
                 captured_pieces[current_player].append(capture)                
-            
+
             for i in captured_pieces[current_player]:
                 print(i, end=' ')                                                       # DEBUG
 
-            if current_player == 'White':
-                king_pos = black_king_pos
-            else: 
-                king_pos = white_king_pos
-            
-
-
-            if king_check(board, opposite_player, all_vecs, king_pos):
-                print("KING IS CHECKED")
+            # if king_check(board, opposite_player, all_vecs, king_pos):
+            #     print("KING IS CHECKED")
 
 
             # Stage 10:          End Step 
@@ -318,7 +315,7 @@ def main():
             last_moves.append(((oy, ox), (ny, nx)))         # used to revert moves
             turn_counter += 1
 
-        break
+        return
     return
 
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ class King(Piece):
     
 class Queen(Piece):
     name: str = "Queen"
-    range: int = 7
+    range: int = 8
     vec: tuple[Vector,...] = [
         (1, 0), (-1, 0), (0, 1), (0, -1), 
         (1, 1), (-1, 1), (1, -1), (-1, -1), 
@@ -36,14 +36,14 @@ class Queen(Piece):
 
 class Bishop(Piece):
     name: str = "Bishop"
-    range: int = 7
+    range: int = 8
     vec: tuple[Vector,...] = [
         (1, 1), (-1, 1), (1, -1), (-1, -1),
     ]
 
 class Rook(Piece):
     name: str = "Rook"
-    range: int = 7
+    range: int = 8
     vec: tuple[Vector,...] = [
     (1, 0), (-1, 0), (0, 1), (0, -1),
     ]
