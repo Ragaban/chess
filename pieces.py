@@ -1,9 +1,11 @@
 # classes for basic Pieces on the chess board
 
 class Piece:
-    vectors: list[tuple] = None
+    """ Base Class for all Piece objects """
+    vectors = None              # base_vectors
     first_mv = False            # If a piece has made their first move
-    name: str = None
+    name = None
+    scalar = None
 
     def __init__(self, color):
         self.color = color
@@ -14,9 +16,19 @@ class Piece:
     def __str__(self)-> str:
         return self.color[0] + self.name[0].upper()
 
+    def get_scalarized_vectors(self, vector) -> list[tuple]:
+        """ Returns a list of vectors that are scalars of a base vector
+        Args:
+            vector is a vector from self.vectors
+        Return:
+            list of vectors * range(1, scalar+1)
+        """
+        return [(vector[0] * s, vector[1] * s) for s in range(1, self.scalar+1)]
+
+
 class King(Piece):
     name: str = "king"
-    range: int = 8
+    scalar: int = 1
     vectors: list[tuple] =  [
         (1, 0), (-1, 0), (0, 1), (0, -1), 
         (1, 1), (-1, 1), (1, -1), (-1, -1),
@@ -24,7 +36,7 @@ class King(Piece):
 
 class Queen(Piece):
     name: str = "queen"
-    range: int = 8
+    scalar: int = 7
     vectors: list[tuple] = [
         (1, 0), (-1, 0), (0, 1), (0, -1), 
         (1, 1), (-1, 1), (1, -1), (-1, -1), 
@@ -33,22 +45,21 @@ class Queen(Piece):
 
 class Bishop(Piece):
     name: str = "bishop"
-    range: int = 8
+    scalar: int = 7
     vectors: list[tuple] = [
         (1, 1), (-1, 1), (1, -1), (-1, -1),
     ]
 
-
 class Rook(Piece):
     name: str = "rook"
-    range: int = 8
+    scalar: int = 7
     vectors: list[tuple] = [
     (1, 0), (-1, 0), (0, 1), (0, -1),
     ]
 
 class Knight(Piece):
     name: str = "knight"
-    range: int = 1
+    scalar: int = 1
     vectors: list[tuple] = [
         (2, 1), (1, 2), (-1, 2), (-2, 1), 
         (-2, -1), (-1, -2), (1, -2), (2, -1)
@@ -59,22 +70,22 @@ class Knight(Piece):
 
 class Pawn(Piece):
     name: str = "pawn"
-    range: int = 2
+    scalar: int = 2
 
     def __init__(self, color):
         self.color = color
-        self.face = 1   # white 
+        self.face = -1   # white 
         if color == 'black':
-            self.face = -1
+            self.face = 1
             
-        self.vectors: list[tuple] = [(self.face, 1), (self.face, -1)]
+        self.vectors: list[tuple] = [(self.face, 0)]
 
     def set_first_mv_true(self):
         self.first_mv = True
-        self.range = 1
+        self.scalar = 1
 
     def capture_vectors(self):
-        return [(self.face, 1), (self.face, -1)]
+        return [(self.face, 1), (-self.face, -1)]
 
 class Empty():
     """This is a special class that represents an empty tile. 

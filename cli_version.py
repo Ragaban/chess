@@ -33,7 +33,7 @@ def draw_board(board):
     """ print out chess board in a nice way."""
     # DONE
     print(end='\n\n\n')
-    upper_label = A  B  C  D  E  F  G  H          # This is all just formatting 
+    upper_label = "A  B  C  D  E  F  G  H"          # This is all just formatting 
     print(PADDING + '  ' + upper_label)             # Not important
     print(PADDING + (3 + len(upper_label)) * '-')   #
     row_num = 8
@@ -55,7 +55,7 @@ def is_valid_coordinate(coord: str)-> bool:
 
 def chess_idx_to_lst(board_pos: str) -> tuple:
     """ Converts chess board index to list index. Given arg needs this form "DIGIT/LETTER" """
-    x_map = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
+    x_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7}
     board_y, board_x =  int(board_pos[1]), board_pos[0]
     x = x_map[board_x]
     y = -1 * board_y + 8         # this fn turns chess y idx to list y idx
@@ -65,7 +65,7 @@ def chess_idx_to_lst(board_pos: str) -> tuple:
 
 def lst_idx_to_chess(idx: tuple[int, int]) -> str:
     """ Reverse function to chess_idx_to_list(). Given arg needs this form "DIGIT/LETTER" """
-    x_map = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h'}
+    x_map = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H'}
     lst_y, lst_x = idx
     x = x_map[lst_x]
     y = 8 - lst_y
@@ -177,7 +177,7 @@ def move_piece(board: ChessArray, ny: int, nx: int, oy: int, ox: int) -> Piece |
 
 def main():
     # STAGE 0: Setup
-    file_name = 'Chess Board.csv'
+    file_name = 'board_state.csv'
     csv_board = []
     with open(file_name) as csvfile:
         tables = reader(csvfile)
@@ -206,11 +206,8 @@ def main():
 
             while True:
                 # STAGE 2:          Player Picks Piece
-                selected_tile = input(f"{current_player}'s Turn: " )
-                if ipt_checker(selected_tile):
-                    if selected_tile[0].isdigit(): 
-                        # formatting e.g: 4A -> A4
-                        selected_tile = selected_tile[1] + selected_tile[0]
+                selected_tile = input(f"{current_player}'s Turn: " ).capitalize()
+                if is_valid_coordinate(selected_tile):
                     break
 
             
@@ -263,11 +260,8 @@ def main():
 
             # STAGE 4:          Player Declares Destination
             while True:
-                destination = input(f'Move {piece} ({selected_tile.upper()}) to: ')
-                if ipt_checker(destination):
-                    if destination[0].isdigit():
-                        destination = destination[1] + destination[0]
-                    
+                destination = input(f'Move {piece} ({selected_tile.upper()}) to: ').capitalize()
+                if is_valid_coordinate(destination):
                     if selected_tile == destination:
                         print('You cannot not move!')
                         continue
