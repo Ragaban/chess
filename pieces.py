@@ -1,42 +1,42 @@
+from dataclasses import dataclass
 # classes for basic Pieces on the chess board
 
+@dataclass
 class Piece:
     """ Base Class for all Piece objects """
-    vectors = None              # base_vectors
+    vectors = None              # default vectors w/o special ones
     first_mv = False            # If a piece has made their first move
     name = None
-    scalar = None
+    rules = None
+    color: str
 
-    def __init__(self, color):
-        self.color = color
-
-    def set_first_mv_true(self):
+    def set_first_mv(self):
         self.first_mv = True
 
     def __str__(self)-> str:
         return self.color[0] + self.name[0].upper()
 
-    def get_scalarized_vectors(self, vector) -> list[tuple]:
-        """ Returns a list of vectors that are scalars of a base vector
-        Args:
-            vector is a vector from self.vectors
-        Return:
-            list of vectors * range(1, scalar+1)
-        """
-        return [(vector[0] * s, vector[1] * s) for s in range(1, self.scalar+1)]
+    # def get_scalarized_vectors(self, vector) -> list[tuple]:
+    #     """ Returns a list of vectors that are scalars of a base vector
+    #     Args:
+    #         vector is a vector from self.vectors
+    #     Return:
+    #         list of vectors * range(1, scalar+1)
+    #     """
+    #     ## TODO: Use this function to for calculations later 
+    #     return [(vector[0] * s, vector[1] * s) for s in range(1, self.scalar+1)]
 
 
 class King(Piece):
     name: str = "king"
-    scalar: int = 1
-    vectors: list[tuple] =  [
-        (1, 0), (-1, 0), (0, 1), (0, -1), 
+    vectors: tuple[tuple] =  (
+        (1, 0), (-1, 0), (0, 1), (0, -1), # TODO: Set Opponent AI,
         (1, 1), (-1, 1), (1, -1), (-1, -1),
-    ]
+    )
+    castling_vectors = [(0, 2), (2, 0)]
 
 class Queen(Piece):
     name: str = "queen"
-    scalar: int = 7
     vectors: list[tuple] = [
         (1, 0), (-1, 0), (0, 1), (0, -1), 
         (1, 1), (-1, 1), (1, -1), (-1, -1), 
@@ -45,21 +45,18 @@ class Queen(Piece):
 
 class Bishop(Piece):
     name: str = "bishop"
-    scalar: int = 7
     vectors: list[tuple] = [
         (1, 1), (-1, 1), (1, -1), (-1, -1),
     ]
 
 class Rook(Piece):
     name: str = "rook"
-    scalar: int = 7
     vectors: list[tuple] = [
     (1, 0), (-1, 0), (0, 1), (0, -1),
     ]
 
 class Knight(Piece):
     name: str = "knight"
-    scalar: int = 1
     vectors: list[tuple] = [
         (2, 1), (1, 2), (-1, 2), (-2, 1), 
         (-2, -1), (-1, -2), (1, -2), (2, -1)
@@ -70,28 +67,18 @@ class Knight(Piece):
 
 class Pawn(Piece):
     name: str = "pawn"
-    scalar: int = 2
+    first_mv = False
 
     def __init__(self, color):
         self.color = color
-        self.face = -1   # white 
+        self.d = -1   # directon
         if color == 'black':
-            self.face = 1
+            self.d = 1
             
-        self.vectors: list[tuple] = [(self.face, 0)]
+        self.vectors: tuple[tuple] = ((self.d, 0))
+        self.vectors_first_mv: tuple[tuple] = ((2, 0))
+        # capture vectors are also used for en_passant they are the same vectors
+        self.capture_vectors: tuple[tuple] = ((self.d, 1), (-self.d, -1))
 
-    def set_first_mv_true(self):
+    def set_first_mv(self):
         self.first_mv = True
-        self.scalar = 1
-
-    def capture_vectors(self):
-        return [(self.face, 1), (-self.face, -1)]
-
-class Empty():
-    """This is a special class that represents an empty tile. 
-    Its sole purpose is to be compared to other Piece objs.
-    """
-    name: str = 'empty'
-    color = None
-    def __str__(self)-> str:
-        return '<>'
