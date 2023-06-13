@@ -3,3 +3,5 @@
 .vscode
 .assets/
 /tests
+rules.md
+app.py
