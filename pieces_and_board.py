@@ -3,7 +3,7 @@
 # TYPES = ["Pawn", "Rook", "Knight", "Bishop", "Queen", "King"]
 MOVESETS = {
     # Moves are in (x, y)
-    "Pawn": ((0, 1)),
+    "Pawn": ((0, 1), (0, 2), (-1, 1), (1, 1)),
     "Rook": ((0, 1), (0, -1), (1, 0), (-1, 0)),
     "Knight": ((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (-1, 2), (1, -2), (-1, -2)),
     "Bishop": ((1, 1), (-1, 1), (1, -1), (1, 1)),
@@ -33,6 +33,9 @@ class ChessBoard:
             [None for _ in range(8)] for _ in range(8)
         ]  # 8x8 2d list filled with None
 
+    def get_item(self, x, y):
+        return self.board[y][x]
+
     def set_piece(self, p, x, y):
         self.board[y][x] = p
 
@@ -51,3 +54,9 @@ class ChessBoard:
                     print("[]", end="")
                 else:
                     print(item)
+
+    def translate_chess_coord(self, s: str) -> tuple[int, int]:
+        m = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
+        x = m[s[0].lower()]
+        y = 8 - int(s[1])
+        return x, y

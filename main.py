@@ -2,27 +2,45 @@ from pieces_and_board import MOVESETS, ChessBoard, ChessPiece
 
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name, color):
         self.name = name
+        self.color = color
+
+
+class ValidationHandler:
+    def __init__(self, board: ChessBoard):
+        self.board = board
+
+    def is_owned(self, player: Player, x: int, y: int):
+        item = self.board.get_item(x, y)
+        if item:
+            if item.color == player.color:
+                return True
+        return False
+
+    def is_chess_coord(ipt: str) -> bool:
+        # valid chess coordinate?
+        if len(ipt) == 2 and (97 < ord(ipt) < 105):
+            return True
+        return False
 
 
 class Game:
-    def __init__(self, board: ChessBoard, p1, p2):
+    def __init__(self, board: ChessBoard, p1: Player, p2: Player):
         self.board = board
         self.p1 = p1
         self.p2 = p2
+        self.validator = ValidationHandler(self.board)
 
     def run(self):
         # Gameplay Loop
         # Before Game Start
-        white = self.p1
-        black = self.p2
-
-        turn = 0
-        move_history = []
+        move_history = []  # all the moves made in a game
         current_p = self.p1
+        turn = 0
 
         while True:
+            #
             # Beginng Step
             turn += 1
             if turn % 2 == 1:
@@ -33,31 +51,20 @@ class Game:
             print(turn)
             print(current_p)
             self.board.prt_board()
+
             # Player Move
-            while True:
-                selected_start: str = self.select_location()
-                # validate
-
-                selected_dest: str = self.select_location()
-                # validate
-                break
-
-            x1, y1 = self.translate_chess_coord(selected_start)
-            x2, y2 = self.translate_chess_coord(selected_dest)
+            self.select_tile(current_p, "Choose your Piece (A1-H8): ", b=True)
+            self.select_tile(current_p, "Choose Destination", b=False)
 
             # End Step
 
     def add_move_history(self):
         ...
 
-    def select_location(self) -> str:
-        return input()
-
-    def translate_chess_coord(self, s: str) -> tuple[int, int]:
-        m = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
-        x = m[s[0].lower()]
-        y = 8 - int(s[1])
-        return x, y
+    def select_tile(self, current_p, info: str, b: bool):
+        # TODO
+        while True:
+            ipt = input(info)
 
 
 def get_layout() -> list[list[str]]:
@@ -101,8 +108,8 @@ def main():
     board = ChessBoard()
     layout = get_layout()
     fill_board(board, layout)
-    p1 = "player1"
-    p2 = "player2"
+    p1 = Player("player1", "white")
+    p2 = Player("player2", "black")
 
     game = Game(board, p1, p2)
     game.run()
