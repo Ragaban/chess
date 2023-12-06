@@ -19,10 +19,21 @@ class ValidationHandler:
         return False
 
     def is_chess_coord(ipt: str) -> bool:
-        # valid chess coordinate?
-        if len(ipt) == 2 and (97 < ord(ipt) < 105):
+        if len(ipt) == 2 and (97 < ord(ipt.lower()) < 105):
             return True
         return False
+
+    def is_valid_move_pawn():
+        ...
+
+    def is_valid_move_knight():
+        ...
+
+    def is_valid_move_rest():
+        ...
+
+    def is_king_checked():
+        ...
 
 
 class Game:
@@ -36,35 +47,50 @@ class Game:
         # Gameplay Loop
         # Before Game Start
         move_history = []  # all the moves made in a game
-        current_p = self.p1
-        turn = 0
+        turn = 1
 
         while True:
             #
             # Beginng Step
-            turn += 1
             if turn % 2 == 1:
-                current_p = self.p1
+                self.current_p = self.p1
             else:
-                current_p = self.p2
+                self.current_p = self.p2
 
             print(turn)
-            print(current_p)
+            print(self.current_p)
             self.board.prt_board()
 
             # Player Move
-            self.select_tile(current_p, "Choose your Piece (A1-H8): ", b=True)
-            self.select_tile(current_p, "Choose Destination", b=False)
+            while True:
+                x1, y1 = self.select_piece(self.current_p)
+                # we then provide possible moves for the player and if they want to change their mind
 
             # End Step
+            turn += 1
 
     def add_move_history(self):
         ...
 
-    def select_tile(self, current_p, info: str, b: bool):
-        # TODO
+    def select_piece(self, player) -> tuple[int, int]:
+        """This function returns the coordinates to the piece"""
         while True:
-            ipt = input(info)
+            ipt = input("Select your piece (A1-H8): ")
+            if not self.validator.is_chess_coord(ipt):
+                print("Invalid coordinates")
+                continue
+            x, y = self.board.parse_chess_coord(ipt)
+            if self.validator.is_owned(player, x, y):
+                return x, y
+
+    def calculate_move(self):
+        ...
+
+    def calculate_move_pawn(self):
+        ...
+
+    def calculate_move_knight(self):
+        ...
 
 
 def get_layout() -> list[list[str]]:

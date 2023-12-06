@@ -55,7 +55,8 @@ class ChessBoard:
                 else:
                     print(item)
 
-    def translate_chess_coord(self, s: str) -> tuple[int, int]:
+    def parse_chess_coord(self, s: str) -> tuple[int, int]:
+        """Turns Chess Coordinates (A1-H8) to 2d list coordinates"""
         m = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
         x = m[s[0].lower()]
         y = 8 - int(s[1])
