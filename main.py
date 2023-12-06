@@ -1,5 +1,8 @@
 from pieces_and_board import MOVESETS, ChessBoard, ChessPiece
 
+class NegIndexError(Exception):
+    pass
+
 
 class Player:
     def __init__(self, name, color):
@@ -12,7 +15,7 @@ class ValidationHandler:
         self.board = board
 
     def is_owned(self, player: Player, x: int, y: int):
-        item = self.board.get_item(x, y)
+        item = self.board[y][x]
         if item:
             if item.color == player.color:
                 return True
@@ -57,8 +60,7 @@ class Game:
             else:
                 self.current_p = self.p2
 
-            print(turn)
-            print(self.current_p)
+            print(f"Turn: {turn}, {self.current_p}'s turn")
             self.board.prt_board()
 
             # Player Move
@@ -73,7 +75,10 @@ class Game:
         ...
 
     def select_piece(self, player) -> tuple[int, int]:
-        """This function returns the coordinates to the piece"""
+        """ Asks the player what piece they want to move and checks validity.
+                checks if given coord are right and 
+                if piece is owned by player    
+        """
         while True:
             ipt = input("Select your piece (A1-H8): ")
             if not self.validator.is_chess_coord(ipt):
@@ -82,6 +87,30 @@ class Game:
             x, y = self.board.parse_chess_coord(ipt)
             if self.validator.is_owned(player, x, y):
                 return x, y
+
+    def calc_move_ranged(self, piece, x, y):
+        "returns all possible moves of a piece on a empty board"
+        mv = MOVESETS[piece.type]
+        mf = []
+        for nx, ny in mv:
+            c = 1
+            while True:
+                v, w = (x + nx * c), (y + ny * c)
+                print(v, w)
+                try: 
+                    if v < 0 or w < 0:
+                        raise NegIndexError
+                    self.board[(v, w)]
+                    mf.append((nx, ny))
+                    if not piece.range:
+                        break
+                except (IndexError, NegIndexError):
+                    print(f'{x, v} not added {v,w}')
+                    break
+                
+                c += 1
+        return mf
+
 
     def calculate_move(self):
         ...

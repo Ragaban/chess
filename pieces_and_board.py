@@ -22,9 +22,9 @@ class ChessPiece:
 
     def __str__(self):
         if self.type == "Knight":
-            return f"{self.color[0]}{self.type[1].upper()}"
+            return f"{self.color[0].lower()}{self.type[1].upper()}"
         else:
-            return f"{self.color[0]}{self.type[0].upper()}"
+            return f"{self.color[0].lower()}{self.type[0].upper()}"
 
 
 class ChessBoard:
@@ -33,10 +33,14 @@ class ChessBoard:
             [None for _ in range(8)] for _ in range(8)
         ]  # 8x8 2d list filled with None
 
-    def get_item(self, x, y):
+    def __getitem__(self, tup):
+        if isinstance(tup[0], str):
+            x, y = self.parse_chess_coord("".join(tup))
+        else:
+            x, y = tup
         return self.board[y][x]
 
-    def set_piece(self, p, x, y):
+    def set_piece(self, p: ChessPiece, x:int, y:int):
         self.board[y][x] = p
 
     def remove_piece(self, x, y) -> ChessPiece | None:
@@ -45,15 +49,18 @@ class ChessBoard:
         return item
 
     def prt_board(self):
-        for row in self.board:
-            print("  A B C D E F G H")
-            for i, item in enumerate(row):
-                if i == 0:
-                    print(f"8 - {i} |")
+        print(
+            "   A  B  C  D  E  F  G  H\n  ________________________"
+            )
+        for i, row in enumerate(self.board):
+            for j, item in enumerate(row):
+                if j == 0:
+                    print(f"{8-i}", end="| ")
                 if not item:
-                    print("[]", end="")
+                    print("[]", end=" ")
                 else:
-                    print(item)
+                    print(item, end=" ")
+            print()
 
     def parse_chess_coord(self, s: str) -> tuple[int, int]:
         """Turns Chess Coordinates (A1-H8) to 2d list coordinates"""
