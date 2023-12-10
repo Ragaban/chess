@@ -1,7 +1,4 @@
-from pieces_and_board import MOVESETS, ChessBoard, ChessPiece
-
-class NegIndexError(Exception):
-    pass
+from pieces_and_board import MOVESETS, ChessBoard, ChessPiece, NegIndexError
 
 
 class Player:
@@ -10,41 +7,85 @@ class Player:
         self.color = color
 
 
-class ValidationHandler:
-    def __init__(self, board: ChessBoard):
+class GameLogic:
+    def __init__(self, board: ChessBoard, player_current):
         self.board = board
+        self.player_current = player_current
 
-    def is_owned(self, player: Player, x: int, y: int):
-        item = self.board[y][x]
+    def is_owned(self, player: Player, x: int, y: int) -> bool:
+        item = self.board[(x, y)]
         if item:
             if item.color == player.color:
                 return True
         return False
 
-    def is_chess_coord(ipt: str) -> bool:
+    def is_chess_coord(self, ipt: str) -> bool:
         if len(ipt) == 2 and (97 < ord(ipt.lower()) < 105):
             return True
         return False
 
-    def is_valid_move_pawn():
-        ...
+    def check_vec_oob(self, posx, posy, v) -> bool:
+        """oob = Out of Bonds which is our Chessboard"""
+        n_posx, n_posy = posx + v[0], posy + v[1]
+        try:
+            if n_posx < 0 or n_posy < 0:
+                raise NegIndexError
+            self.board[(n_posx, n_posy)]
+            return True
+        except (IndexError, NegIndexError):
+            return False
 
-    def is_valid_move_knight():
-        ...
+    def get_rbqk_moves(self, vectors, posx, posy) -> list:
+        m = []
+        for v in vectors:
+            while True:
+                s = 1
+                vx, vy = v[0] * s, v[1] * s
 
-    def is_valid_move_rest():
-        ...
+                if not self.check_vec_oob(posx, posy, (vx, vy)):
+                    break
 
-    def is_king_checked():
+                n_posx, n_posy = posx + vx, posy + vy
+                owned = self.is_owned(self.player_current, n_posx, n_posy)
+                if owned:
+                    break
+                elif not owned:
+                    m.append((vx, vy))
+                    break
+
+                m.append((vx, vy))
+                s + 1
+
+        return m
+
+    def get_knight_moves(self, posx, posy) -> list:
+        m = []
+        vectors = MOVESETS["Knight"]
+        for v in vectors:
+            if self.check_vec_oob(posx, posy, v):
+                continue
+            n_posx, n_posy = posx + v[0], posy + v[1]
+            if self.is_owned(self.player_current, n_posx, n_posy):
+                continue
+            m.append(v)
+        return m
+
+    def get_pawn_moves(self):
+        # TODO
         ...
 
 
 class Game:
+    messages = [
+        "Choose a piece (a1-h8): ",
+        "Choose where to move (a1-h8): ",
+    ]
+
     def __init__(self, board: ChessBoard, p1: Player, p2: Player):
         self.board = board
         self.p1 = p1
         self.p2 = p2
-        self.validator = ValidationHandler(self.board)
+        self.logic = GameLogic(self.board, MOVESETS)
 
     def run(self):
         # Gameplay Loop
@@ -53,75 +94,65 @@ class Game:
         turn = 1
 
         while True:
-            #
-            # Beginng Step
-            if turn % 2 == 1:
-                self.current_p = self.p1
-            else:
-                self.current_p = self.p2
+            self.get_all_moves()
 
-            print(f"Turn: {turn}, {self.current_p}'s turn")
+            # Turn Start
+            if turn % 2 == 1:
+                self.change_current_player(self.p1)
+            else:
+                self.change_current_player(self.p2)
+
+            print(f"Turn: {turn}, {self.p_current}'s turn")
             self.board.prt_board()
 
-            # Player Move
+            # Player Decision Time
             while True:
-                x1, y1 = self.select_piece(self.current_p)
+                # Choose your piece
+                posx, posy = self.select_coord(self.messages[0])
+                piece_selected = self.board[(posx, posy)]
+                if not self.logic.is_owned(self.player_current, piece_selected):
+                    continue
+
+                # Choose where to go
+                n_posx, n_posy = self.select_coord(self.messages[1])
+                # TODO: validate chosen point
+
                 # we then provide possible moves for the player and if they want to change their mind
 
             # End Step
             turn += 1
 
-    def add_move_history(self):
-        ...
+    def get_all_moves(self):
+        for y, row in enumerate(self.board.board):
+            for x, item in enumerate(row):
+                if not item:
+                    continue
+                if item.type == "Knight":
+                    m = self.logic.get_knight_moves(x, y)
+                    item.add_current_moves(m)
+                elif item.type == "Pawn":
+                    m = self.logic.get_pawn_moves(x, y)
+                    item.add_current_moves(m)
+                else:
+                    vectors = MOVESETS[item.type]
+                    m = self.logic.get_rbqk_moves(vectors, x, y)
+                    item.add_current_moves(m)
 
-    def select_piece(self, player) -> tuple[int, int]:
-        """ Asks the player what piece they want to move and checks validity.
-                checks if given coord are right and 
-                if piece is owned by player    
-        """
+    def change_current_player(self, player):
+        self.current_player = player
+        self.logic.current_player = player
+
+    def select_coord(self, msg: str) -> tuple[int, int]:
+        """asks for valid chess coordinates"""
         while True:
-            ipt = input("Select your piece (A1-H8): ")
-            if not self.validator.is_chess_coord(ipt):
+            ipt = input(msg)
+            if not self.logic.is_chess_coord(ipt):
                 print("Invalid coordinates")
                 continue
-            x, y = self.board.parse_chess_coord(ipt)
-            if self.validator.is_owned(player, x, y):
-                return x, y
-
-    def calc_move_ranged(self, piece, x, y):
-        "returns all possible moves of a piece on a empty board"
-        mv = MOVESETS[piece.type]
-        mf = []
-        for nx, ny in mv:
-            c = 1
-            while True:
-                v, w = (x + nx * c), (y + ny * c)
-                print(v, w)
-                try: 
-                    if v < 0 or w < 0:
-                        raise NegIndexError
-                    self.board[(v, w)]
-                    mf.append((nx, ny))
-                    if not piece.range:
-                        break
-                except (IndexError, NegIndexError):
-                    print(f'{x, v} not added {v,w}')
-                    break
-                
-                c += 1
-        return mf
+            return self.board.parse_chess_coord(ipt)
 
 
-    def calculate_move(self):
-        ...
-
-    def calculate_move_pawn(self):
-        ...
-
-    def calculate_move_knight(self):
-        ...
-
-
+# Outside Functions
 def get_layout() -> list[list[str]]:
     layout = []
     with open("layout.csv") as csv_file:

@@ -17,7 +17,7 @@ class ChessPiece:
         self.type: str = type
         self.color: str = color
         self.range: bool = range
-        self.moveset: tuple[tuple, ...] = MOVESETS[type]
+        self.moves_current = []
         self.first_move = False
 
     def __str__(self):
@@ -25,6 +25,15 @@ class ChessPiece:
             return f"{self.color[0].lower()}{self.type[1].upper()}"
         else:
             return f"{self.color[0].lower()}{self.type[0].upper()}"
+
+    def add_current_moves(self, m: list):
+        self.moves_current += m
+
+    def set_first_move_true(self):
+        self.first_move = True
+
+    def set_first_move_false(self):
+        self.first_move = False
 
 
 class ChessBoard:
@@ -40,7 +49,7 @@ class ChessBoard:
             x, y = tup
         return self.board[y][x]
 
-    def set_piece(self, p: ChessPiece, x:int, y:int):
+    def set_piece(self, p: ChessPiece, x: int, y: int):
         self.board[y][x] = p
 
     def remove_piece(self, x, y) -> ChessPiece | None:
@@ -49,9 +58,7 @@ class ChessBoard:
         return item
 
     def prt_board(self):
-        print(
-            "   A  B  C  D  E  F  G  H\n  ________________________"
-            )
+        print("   A  B  C  D  E  F  G  H\n  ________________________")
         for i, row in enumerate(self.board):
             for j, item in enumerate(row):
                 if j == 0:
