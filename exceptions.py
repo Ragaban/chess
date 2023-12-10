@@ -1,0 +1,2 @@
+class NegIndexError(Exception):
+    pass
