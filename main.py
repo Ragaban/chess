@@ -1,78 +1,11 @@
 from pieces_and_board import MOVESETS, ChessBoard, ChessPiece, NegIndexError
+from class_gamelogic import GameLogic
 
 
 class Player:
     def __init__(self, name, color):
         self.name = name
         self.color = color
-
-
-class GameLogic:
-    def __init__(self, board: ChessBoard, player_current):
-        self.board = board
-        self.player_current = player_current
-
-    def is_owned(self, player: Player, x: int, y: int) -> bool:
-        item = self.board[(x, y)]
-        if item:
-            if item.color == player.color:
-                return True
-        return False
-
-    def is_chess_coord(self, ipt: str) -> bool:
-        if len(ipt) == 2 and (97 < ord(ipt.lower()) < 105):
-            return True
-        return False
-
-    def check_vec_oob(self, posx, posy, v) -> bool:
-        """oob = Out of Bonds which is our Chessboard"""
-        n_posx, n_posy = posx + v[0], posy + v[1]
-        try:
-            if n_posx < 0 or n_posy < 0:
-                raise NegIndexError
-            self.board[(n_posx, n_posy)]
-            return True
-        except (IndexError, NegIndexError):
-            return False
-
-    def get_rbqk_moves(self, vectors, posx, posy) -> list:
-        m = []
-        for v in vectors:
-            while True:
-                s = 1
-                vx, vy = v[0] * s, v[1] * s
-
-                if not self.check_vec_oob(posx, posy, (vx, vy)):
-                    break
-
-                n_posx, n_posy = posx + vx, posy + vy
-                owned = self.is_owned(self.player_current, n_posx, n_posy)
-                if owned:
-                    break
-                elif not owned:
-                    m.append((vx, vy))
-                    break
-
-                m.append((vx, vy))
-                s + 1
-
-        return m
-
-    def get_knight_moves(self, posx, posy) -> list:
-        m = []
-        vectors = MOVESETS["Knight"]
-        for v in vectors:
-            if self.check_vec_oob(posx, posy, v):
-                continue
-            n_posx, n_posy = posx + v[0], posy + v[1]
-            if self.is_owned(self.player_current, n_posx, n_posy):
-                continue
-            m.append(v)
-        return m
-
-    def get_pawn_moves(self):
-        # TODO
-        ...
 
 
 class Game:
@@ -85,7 +18,8 @@ class Game:
         self.board = board
         self.p1 = p1
         self.p2 = p2
-        self.logic = GameLogic(self.board, MOVESETS)
+        self.set_current_player(self, p1)
+        self.logic = GameLogic(self.board, self.current_player)
 
     def run(self):
         # Gameplay Loop
@@ -98,9 +32,9 @@ class Game:
 
             # Turn Start
             if turn % 2 == 1:
-                self.change_current_player(self.p1)
+                self.set_current_player(self.p1)
             else:
-                self.change_current_player(self.p2)
+                self.set_current_player(self.p2)
 
             print(f"Turn: {turn}, {self.p_current}'s turn")
             self.board.prt_board()
@@ -108,13 +42,11 @@ class Game:
             # Player Decision Time
             while True:
                 # Choose your piece
-                posx, posy = self.select_coord(self.messages[0])
-                piece_selected = self.board[(posx, posy)]
-                if not self.logic.is_owned(self.player_current, piece_selected):
-                    continue
+                pos1 = self.select_coord(self.messages[0])
+                piece_selected = self.board[(pos1[0], pos1[1])]
 
                 # Choose where to go
-                n_posx, n_posy = self.select_coord(self.messages[1])
+                pos2 = self.select_coord(self.messages[1])
                 # TODO: validate chosen point
 
                 # we then provide possible moves for the player and if they want to change their mind
@@ -127,20 +59,21 @@ class Game:
             for x, item in enumerate(row):
                 if not item:
                     continue
-                if item.type == "Knight":
-                    m = self.logic.get_knight_moves(x, y)
-                    item.add_current_moves(m)
-                elif item.type == "Pawn":
-                    m = self.logic.get_pawn_moves(x, y)
-                    item.add_current_moves(m)
-                else:
-                    vectors = MOVESETS[item.type]
-                    m = self.logic.get_rbqk_moves(vectors, x, y)
-                    item.add_current_moves(m)
+                piece = item  # now we know it's not None
+                vectors = MOVESETS[item.type]
 
-    def change_current_player(self, player):
+                if piece.type == "Knight":
+                    m = self.logic.get_moves_knight(piece, vectors, x, y)
+                    piece.add_current_moves(m)
+                elif piece.type == "Pawn":
+                    m = self.logic.ge_moves_pawn(piece, vectors, x, y)
+                    piece.add_current_moves(m)
+                else:
+                    valid_moves = self.logic.get_moves_rbkq(piece, vectors, x, y)
+                    piece.add_current_moves(valid_moves)
+
+    def set_current_player(self, player: Player):
         self.current_player = player
-        self.logic.current_player = player
 
     def select_coord(self, msg: str) -> tuple[int, int]:
         """asks for valid chess coordinates"""

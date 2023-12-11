@@ -3,7 +3,7 @@
 # TYPES = ["Pawn", "Rook", "Knight", "Bishop", "Queen", "King"]
 MOVESETS = {
     # Moves are in (x, y)
-    "Pawn": ((0, 1), (0, 2), (-1, 1), (1, 1)),
+    "Pawn": ((0, 1), ((-1, 1), (1, 1))),
     "Rook": ((0, 1), (0, -1), (1, 0), (-1, 0)),
     "Knight": ((2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (-1, 2), (1, -2), (-1, -2)),
     "Bishop": ((1, 1), (-1, 1), (1, -1), (1, 1)),
@@ -13,18 +13,18 @@ MOVESETS = {
 
 
 class ChessPiece:
-    def __init__(self, type, color, range):
+    def __init__(self, type, color, ranged):
         self.type: str = type
         self.color: str = color
-        self.range: bool = range
+        if type in ("Rook", "Bishop", "Queen", "King"):
+            self.ranged: bool = ranged
         self.moves_current = []
-        self.first_move = False
+        self.moved = False
 
     def __str__(self):
-        if self.type == "Knight":
+        if self.type != "Knight":
             return f"{self.color[0].lower()}{self.type[1].upper()}"
-        else:
-            return f"{self.color[0].lower()}{self.type[0].upper()}"
+        return f"{self.color[0].lower()}{self.type[0].upper()}"
 
     def add_current_moves(self, m: list):
         self.moves_current += m
