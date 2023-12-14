@@ -1,3 +1,4 @@
 t.py
 *.pyc
 .vscode
+tests/

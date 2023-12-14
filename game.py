@@ -1,11 +1,20 @@
-from pieces_and_board import MOVESETS, ChessBoard, ChessPiece, NegIndexError
+from pieces_and_board import MOVESETS, ChessBoard, ChessPiece
 from class_gamelogic import GameLogic
+
+from exceptions import NegIndexError
 
 
 class Player:
     def __init__(self, name, color):
         self.name = name
         self.color = color
+        self.captured_pieces = []
+
+    def __str__(self):
+        return self.color
+
+    def capture_piece(self, p: ChessPiece):
+        self.capture_piece.append(p)
 
 
 class Game:
@@ -18,8 +27,8 @@ class Game:
         self.board = board
         self.p1 = p1
         self.p2 = p2
-        self.set_current_player(self, p1)
-        self.logic = GameLogic(self.board, self.current_player)
+        self.set_current_player(p1)
+        self.logic = GameLogic(self.board)
 
     def run(self):
         # Gameplay Loop
@@ -28,7 +37,15 @@ class Game:
         turn = 1
 
         while True:
-            self.get_all_moves()
+            self.add_moves_to_all_pieces()
+
+            ## REMOVE THIS BLOCK
+            for row in self.board.board:
+                for item in row:
+                    if item:
+                        print(f"{item} - {item.moves_current}")
+
+            ##
 
             # Turn Start
             if turn % 2 == 1:
@@ -36,25 +53,51 @@ class Game:
             else:
                 self.set_current_player(self.p2)
 
-            print(f"Turn: {turn}, {self.p_current}'s turn")
+            print(f"Turn: {turn}, {self.current_player}'s turn")
             self.board.prt_board()
 
             # Player Decision Time
             while True:
                 # Choose your piece
                 pos1 = self.select_coord(self.messages[0])
-                piece_selected = self.board[(pos1[0], pos1[1])]
+                item = self.board[*pos1]
+                if not item:
+                    print(f"{item}")
+                    continue
+                piece = item
+                # del item
+                # TODO: this gets repeated
+                if piece.color.lower() != self.current_player.color.lower():
+                    print(f"Wrong Color {piece.color} {self.current_player.color}")
+                    continue
 
                 # Choose where to go
                 pos2 = self.select_coord(self.messages[1])
-                # TODO: validate chosen point
+                v = self.calc_vec(pos2, pos2)
+                if v not in piece.moves_current:
+                    print(f"{v} . {piece.moves_current}")
+                    continue
 
-                # we then provide possible moves for the player and if they want to change their mind
+                break
+
+            removed_item = self.board.remove_piece(*pos2)
+            self.board.set_piece(piece, *pos2)
+            if removed_item:
+                self.current_player.capture_piece(removed_item)
 
             # End Step
             turn += 1
 
-    def get_all_moves(self):
+    def calc_vec(self, p1, p2):
+        "p1 is our end point and p2 is our starting point"
+        x1, y1 = p1
+        x2, y2 = p2
+        vx = x1 - x2
+        vy = y1 - y2
+        return vx, vy
+
+    def add_moves_to_all_pieces(self):
+        #! TODO only knights work get moves.
         for y, row in enumerate(self.board.board):
             for x, item in enumerate(row):
                 if not item:
@@ -66,10 +109,11 @@ class Game:
                     m = self.logic.get_moves_knight(piece, vectors, x, y)
                     piece.add_current_moves(m)
                 elif piece.type == "Pawn":
-                    m = self.logic.ge_moves_pawn(piece, vectors, x, y)
+                    m = self.logic.get_moves_pawn(piece, vectors[0], x, y)
+                    m2 = self.logic.get_attack_moves_pawn(piece, vectors[1], x, y)
                     piece.add_current_moves(m)
                 else:
-                    valid_moves = self.logic.get_moves_rbkq(piece, vectors, x, y)
+                    valid_moves = self.logic.get_moves_rbqk(piece, vectors, x, y)
                     piece.add_current_moves(valid_moves)
 
     def set_current_player(self, player: Player):

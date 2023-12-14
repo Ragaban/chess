@@ -1,6 +1,3 @@
-# chess game logic
-
-# TYPES = ["Pawn", "Rook", "Knight", "Bishop", "Queen", "King"]
 MOVESETS = {
     # Moves are in (x, y)
     "Pawn": ((0, 1), ((-1, 1), (1, 1))),
@@ -13,18 +10,25 @@ MOVESETS = {
 
 
 class ChessPiece:
-    def __init__(self, type, color, ranged):
+    def __init__(self, type, color, range):
         self.type: str = type
         self.color: str = color
-        if type in ("Rook", "Bishop", "Queen", "King"):
-            self.ranged: bool = ranged
+        self.range = range
+        if type == "Pawn":
+            self.set_pawn_attr_direction(color)
         self.moves_current = []
-        self.moved = False
+        self.first_move = False
 
     def __str__(self):
         if self.type != "Knight":
-            return f"{self.color[0].lower()}{self.type[1].upper()}"
-        return f"{self.color[0].lower()}{self.type[0].upper()}"
+            return f"{self.color[0].lower()}{self.type[0].upper()}"
+        return f"{self.color[0].lower()}{self.type[1].upper()}"
+
+    def set_pawn_attr_direction(self, color):
+        if color == "white":
+            self.direction = -1
+        else:
+            self.direction = 1
 
     def add_current_moves(self, m: list):
         self.moves_current += m
