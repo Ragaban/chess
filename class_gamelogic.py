@@ -1,19 +1,21 @@
+import re
+
 from exceptions import NegIndexError
-from main import Player
-from pieces_and_board import ChessBoard, ChessPiece
+from class_board import ChessBoard
 
 
 class GameLogic:
     def __init__(self, board: ChessBoard):
         self.board = board
+        self.re_coord = re.compile("([a-h]\d|[A-H]\d)")  # matching chess notation
 
     def is_chess_coord(self, ipt: str) -> bool:
-        if len(ipt) == 2 and (97 < ord(ipt.lower()) < 105):
+        if self.re_coord.match(ipt):
             return True
         return False
 
     def is_point_oob(self, x, y) -> bool:
-        """oob = Out of Bonds"""
+        """oob = Out of Bonds."""
         try:
             if x < 0 or y < 0:
                 raise NegIndexError
@@ -22,11 +24,10 @@ class GameLogic:
         except (IndexError, NegIndexError):
             return True
 
-    def is_same_color(self, piece1, piece2) -> bool:
-        """run self.check_point_oob() before this func"""
-        return piece1.color == piece2.color
+    def is_same_color(self, color1, color2) -> bool:
+        return color1.lower() == color2.lower()
 
-    # TODO maybe combine get_moves funcs. They share a lot of similarities
+    # TODO maybe combine get_moves funcs. They share a lot of logic
 
     def get_moves_rbqk(self, piece, vectors, x1, y1):
         m = []
@@ -34,22 +35,23 @@ class GameLogic:
             s = 0  # scalar
             while True:
                 s += 1
-                x2, y2 = x1 + v[0] * s, y1 + v[1] * s
+                x2 = x1 + v[0] * s
+                y2 = y1 + v[1] * s
                 if self.is_point_oob(x2, y2):
                     break
 
-                item = self.board[(x2, y2)]
+                test_sqr = self.board[(x2, y2)]
 
-                if item == None:
-                    m.append(v)
+                if test_sqr == None:
+                    m.append((v[0] * s, v[1] * s))
 
-                elif not self.is_same_color(item, piece):
-                    m.append(v)
+                elif not self.is_same_color(test_sqr.color, piece.color):
+                    m.append((v[0] * s, v[1] * s))
 
                 else:
                     break
 
-                if not piece.ranged:  # only for king
+                if piece.type == "King":
                     break
 
         return m
@@ -66,48 +68,35 @@ class GameLogic:
             if item == None:
                 m.append(v)
 
-            elif not self.is_same_color(item, piece):
+            elif not self.is_same_color(item.color, piece.color):
                 m.append(v)
 
             else:
                 continue
         return m
 
-    def get_pawn_moves(self, piece, vectors, x1, y1) -> list:
-        d = 1  # direction the pawn is facing
-        if piece.color == "white":
-            d = -1
-        mv = vectors[0]  # only used for moving forward
-        attack_vectors = vectors[1]
+    def get_moves_pawn(self, piece, x1, y1, s) -> tuple:
+        d = piece.direction
+        x2 = x1 + 0  # x never changes when moving forward
+        y2 = y1 + 1 * d * s
+        if self.is_point_oob(x2, y2):
+            return []
+        return [(0, 1 * d * s)]
+
+    def get_attack_moves_pawn(self, piece, vectors, x1, y1) -> list:
+        d = piece.direction
         m = []
-        s = 1
-        while True:
-            x2 = x1 + mv[0] * s
-            y2 = y1 + mv[1] * s * d
-            if self.is_point_oob(x2, y2):
-                break
+        for v in vectors:
+            x2 = x1 + v[0]
+            y2 = y1 + v[1] * d
 
-            item = self.board[(x2, y2)]
-            if item != None:
-                break
-            m.append(mv)
-
-            if not piece.moved and s <= 2:
-                s += 1
-            else:
-                break
-
-        for v in attack_vectors:
-            x2 = x1 + v[0] * s
-            y2 = y1 + v[1] * s * d
-            item = self.board[(x2, y2)]
             if self.is_point_oob(x2, y2):
                 continue
+            item = self.board[(x2, y2)]
 
             if item == None:
                 continue
 
-            if not self.is_same_color(item, piece):
+            if not self.is_same_color(item.color, piece.color):
                 m.append(v)
-
         return m
