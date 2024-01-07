@@ -1,7 +1,11 @@
 import re
 
 from exceptions import NegIndexError
+<<<<<<< HEAD
 from class_board import ChessBoard
+=======
+from pieces_and_board import ChessBoard
+>>>>>>> 365c13722eff4117d55596327f61a5a9aeef2d93
 
 
 class GameLogic:
@@ -75,6 +79,7 @@ class GameLogic:
                 continue
         return m
 
+<<<<<<< HEAD
     def get_moves_pawn(self, piece, x1, y1, s) -> tuple:
         d = piece.direction
         x2 = x1 + 0  # x never changes when moving forward
@@ -90,6 +95,33 @@ class GameLogic:
             x2 = x1 + v[0]
             y2 = y1 + v[1] * d
 
+=======
+    def get_moves_pawn(self, piece, v, x1, y1) -> list:
+        d = piece.direction
+        m = []
+        for s in range(1, 3):
+            x2 = x1 + v[0] * s
+            y2 = y1 + v[1] * s * d
+            if self.is_point_oob(x2, y2):
+                break
+
+            item = self.board[(x2, y2)]
+            if item != None:
+                break
+            m.append(v)
+
+            if piece.first_move:
+                break
+        return m
+
+    def get_attack_moves_pawn(self, piece, vectors, x1, y1) -> list:
+        d = piece.direction
+        m = []
+        for v in vectors:
+            x2 = x1 + v[0]
+            y2 = y1 + v[1] * d
+
+>>>>>>> 365c13722eff4117d55596327f61a5a9aeef2d93
             if self.is_point_oob(x2, y2):
                 continue
             item = self.board[(x2, y2)]
