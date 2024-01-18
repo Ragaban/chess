@@ -1,11 +1,7 @@
 import re
 
 from exceptions import NegIndexError
-<<<<<<< HEAD
 from class_board import ChessBoard
-=======
-from pieces_and_board import ChessBoard
->>>>>>> 365c13722eff4117d55596327f61a5a9aeef2d93
 
 
 class GameLogic:
@@ -39,18 +35,20 @@ class GameLogic:
             s = 0  # scalar
             while True:
                 s += 1
-                x2 = x1 + v[0] * s
-                y2 = y1 + v[1] * s
+                vx = v[0] * s
+                vy = v[1] * s
+                x2 = x1 + vx
+                y2 = y1 + vy
                 if self.is_point_oob(x2, y2):
                     break
 
                 test_sqr = self.board[(x2, y2)]
 
                 if test_sqr == None:
-                    m.append((v[0] * s, v[1] * s))
+                    m.append((vx, vy))
 
                 elif not self.is_same_color(test_sqr.color, piece.color):
-                    m.append((v[0] * s, v[1] * s))
+                    m.append((vx, vy))
 
                 else:
                     break
@@ -79,49 +77,29 @@ class GameLogic:
                 continue
         return m
 
-<<<<<<< HEAD
-    def get_moves_pawn(self, piece, x1, y1, s) -> tuple:
-        d = piece.direction
-        x2 = x1 + 0  # x never changes when moving forward
-        y2 = y1 + 1 * d * s
+    def get_moves_pawn(self, x1, y1, s, d) -> list:
+        m = []
+        vy = 1 * s * d
+        x2 = x1
+        y2 = y1 + vy
         if self.is_point_oob(x2, y2):
-            return []
-        return [(0, 1 * d * s)]
+            return m
 
-    def get_attack_moves_pawn(self, piece, vectors, x1, y1) -> list:
-        d = piece.direction
-        m = []
-        for v in vectors:
-            x2 = x1 + v[0]
-            y2 = y1 + v[1] * d
+        item = self.board[(x2, y2)]
+        if item != None:
+            return m
+        m.append((0, vy))
 
-=======
-    def get_moves_pawn(self, piece, v, x1, y1) -> list:
-        d = piece.direction
-        m = []
-        for s in range(1, 3):
-            x2 = x1 + v[0] * s
-            y2 = y1 + v[1] * s * d
-            if self.is_point_oob(x2, y2):
-                break
-
-            item = self.board[(x2, y2)]
-            if item != None:
-                break
-            m.append(v)
-
-            if piece.first_move:
-                break
         return m
 
-    def get_attack_moves_pawn(self, piece, vectors, x1, y1) -> list:
-        d = piece.direction
+    def get_attack_moves_pawn(self, piece, vectors, x1, y1, d) -> list:
         m = []
         for v in vectors:
-            x2 = x1 + v[0]
-            y2 = y1 + v[1] * d
+            vx = v[0]
+            vy = v[1] * d
+            x2 = x1 + vx
+            y2 = y1 + vy
 
->>>>>>> 365c13722eff4117d55596327f61a5a9aeef2d93
             if self.is_point_oob(x2, y2):
                 continue
             item = self.board[(x2, y2)]
@@ -130,5 +108,5 @@ class GameLogic:
                 continue
 
             if not self.is_same_color(item.color, piece.color):
-                m.append(v)
+                m.append((vx, vy))
         return m

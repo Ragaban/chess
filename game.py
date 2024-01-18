@@ -55,30 +55,16 @@ class Game:
         while True:
             self.calculate_all_possible_moves()
 
-            # self.debug_prt_current_mvs()
+            self.debug_prt_current_mvs()
 
             # Turn Start
-            print(f"Turn: {turn}, {self.current_player}'s turn")
+            print(f"\nTurn: {turn}, {self.current_player}'s turn")
             self.board.prt_board()
 
-            # player makes move
             """
-            self.current_player.select_coord()
-            
-            player takes piece in hand:
-                -> player gives a coordinate
-                is the coordinate valid?
-                    does the board contain coordinate?
-                    does the coordinate point to a piece?
-                    does the coordinate point to a piece belonging to player?
 
-            player puts piece where he wants to:
-                -> player gives a coordinate
-                is the coordinate valid?
-                    does the board contain coordinate?
-                    does the coordinate match with a move of the selected piece?
-                    
-    
+
+
             """
 
             pos1, piece = self.player_selects_piece(self.current_player)
@@ -90,6 +76,7 @@ class Game:
 
             pos2 = self.player_selects_destiny(pos1, piece)
             removed_item = self.move_piece(pos1, pos2)
+            piece.set_has_moved_true()
 
             if removed_item:  # if its Piece
                 self.current_player.capture_piece(removed_item)
@@ -104,7 +91,7 @@ class Game:
 
     def player_selects_piece(self, player):
         while True:
-            ipt = input(msgs[0])  # Select Piece
+            ipt = input(f"\n{msgs[0]}")  # Select Piece
             if not self.logic.is_chess_coord(ipt):
                 print(f"{ipt} is invalid")
                 continue
@@ -123,7 +110,7 @@ class Game:
 
     def player_selects_destiny(self, pos1, piece):
         while True:
-            ipt = input(msgs[1])
+            ipt = input(f"\n{msgs[1]}")
             if not self.logic.is_chess_coord(ipt):
                 print(f"{ipt} is invalid")
                 continue
@@ -165,16 +152,21 @@ class Game:
                     continue
                 piece
                 vectors = MOVESETS[piece.type]
+                piece.del_current_moves()
 
                 if piece.type == "Knight":
                     m = self.logic.get_moves_knight(piece, vectors, x, y)
                     piece.add_current_moves(m)
+
                 elif piece.type == "Pawn":
-                    m = self.logic.get_moves_pawn(piece, x, y, 1)
-                    if not piece.moved:
-                        m += self.logic.get_moves_pawn(piece, x, y, 2)
-                    m2 = self.logic.get_attack_moves_pawn(piece, vectors[1], x, y)
-                    piece.add_current_moves(m + m2)
+                    d = piece.direction
+                    m = self.logic.get_moves_pawn(x, y, 1, d)
+                    if not piece.has_moved:
+                        m2 = self.logic.get_moves_pawn(x, y, 2, d)
+                        m += m2
+                    am = self.logic.get_attack_moves_pawn(piece, vectors[1], x, y, d)
+                    piece.add_current_moves(m + am)
+
                 else:
                     m = self.logic.get_moves_rbqk(piece, vectors, x, y)
                     piece.add_current_moves(m)
