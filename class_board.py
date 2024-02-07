@@ -2,6 +2,9 @@ from class_pieces import ChessPiece
 
 
 class ChessBoard:
+    blk_sqr = "■"
+    wht_sqr = "□"
+
     def __init__(self):
         self.board = [
             [None for _ in range(8)] for _ in range(8)
@@ -20,6 +23,16 @@ class ChessBoard:
         self.board[y].insert(x, None)
         return item
 
+    def where_is_all(self) -> list:
+        all = []
+        for y, row in enumerate(self.board):
+            for x, piece in enumerate(row):
+                if not piece:
+                    continue
+
+                all.append(((x, y), piece))
+        return all
+
     def prt_board(self, marked_sqrs=[]):
         # TODO add marked_sqrs for move indication
         print("   A  B  C  D  E  F  G  H\n  ________________________")
@@ -28,9 +41,9 @@ class ChessBoard:
                 if j == 0:
                     print(f"{8-i}", end="| ")
                 if (j, i) in marked_sqrs:
-                    print("XX", end=" ")
+                    print("■", end=" ")
                 elif not item:
-                    print("[]", end=" ")
+                    print("□", end=" ")
                 else:
                     print(item, end=" ")
             print()

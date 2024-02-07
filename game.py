@@ -47,6 +47,8 @@ class Game:
         self.current_player = p1
         self.logic = GameLogic(self.board)
 
+        self.debug = True
+
     def run(self):
         move_history = []
         turn = 1
@@ -54,29 +56,25 @@ class Game:
         # Turn Loop
         while True:
             self.calculate_all_possible_moves()
-
-            self.debug_prt_current_mvs()
+            self.debug_print_all_mvs()
 
             # Turn Start
             print(f"\nTurn: {turn}, {self.current_player}'s turn")
             self.board.prt_board()
 
-            """
-
-
-
-            """
-
+            # Player Move
             pos1, piece = self.player_selects_piece(self.current_player)
-
             x1, y1 = pos1
             ms = piece.moves_current
             marked_sqrs = [(x1 + vx, y1 + vy) for vx, vy in ms]
-            self.board.prt_board(marked_sqrs=marked_sqrs)
-
+            self.board.prt_board(marked_sqrs)
             pos2 = self.player_selects_destiny(pos1, piece)
             removed_item = self.move_piece(pos1, pos2)
+
+            # End Step
             piece.set_has_moved_true()
+            used_moved = (pos1, pos2, removed_item)
+            move_history.append(used_moved)
 
             if removed_item:  # if its Piece
                 self.current_player.capture_piece(removed_item)
@@ -146,30 +144,56 @@ class Game:
 
     def calculate_all_possible_moves(self):
         # TODO also king check missing. Can something move if it creates self check?
-        for y, row in enumerate(self.board.board):
-            for x, piece in enumerate(row):
-                if not piece:
-                    continue
-                piece
-                vectors = MOVESETS[piece.type]
-                piece.del_current_moves()
+        coords_and_pieces = self.board.where_is_all()
 
-                if piece.type == "Knight":
-                    m = self.logic.get_moves_knight(piece, vectors, x, y)
-                    piece.add_current_moves(m)
+        for coord, piece in coords_and_pieces:
+            vectors = MOVESETS[piece.type]
+            piece.del_current_moves()
 
-                elif piece.type == "Pawn":
-                    d = piece.direction
-                    m = self.logic.get_moves_pawn(x, y, 1, d)
-                    if not piece.has_moved:
-                        m2 = self.logic.get_moves_pawn(x, y, 2, d)
-                        m += m2
-                    am = self.logic.get_attack_moves_pawn(piece, vectors[1], x, y, d)
-                    piece.add_current_moves(m + am)
+            if piece.type in ("Knight", "King"):
+                # pieces with range 1
+                for vec in vectors:
+                    if self.logic.is_valid_vector_rbqkn(vec, *coord, piece.color):
+                        piece.add_move(vec)
 
-                else:
-                    m = self.logic.get_moves_rbqk(piece, vectors, x, y)
-                    piece.add_current_moves(m)
+            elif piece.type == "Pawn":
+                # for baldy fuckboys *whispers under his breath "stupid pawns..."
+                # "Pawn": ((0, 1), ((-1, 1), (1, 1))),
+                d = piece.direction
+                move_vector = (
+                    vectors[0][0],
+                    vectors[0][1] * d,
+                )  # Pawn mv vec can be either (0, 1) or (0, -1) depending on color
+                attack_vectors = vectors[1]
+
+                if self.logic.is_valid_move_vector_pawn(move_vector, *coord):
+                    piece.add_move(move_vector)
+
+                if not piece.has_moved:
+                    new_move_vector = move_vector[0], move_vector[1] * 2
+                    if self.logic.is_valid_move_vector_pawn(new_move_vector, *coord):
+                        piece.add_move(new_move_vector)
+
+                for vec in attack_vectors:
+                    # plus direction
+                    vec = vec[0], vec[1] * d
+                    if self.logic.is_valid_attack_vector_pawn(vec, *coord, piece.color):
+                        piece.add_move(vec)
+
+            else:
+                # for pieces with infinite range
+                for vec in vectors:
+                    s = 0
+                    while True:
+                        s += 1
+                        vx, vy = vec[0] * s, vec[1] * s
+                        if self.logic.is_valid_vector_rbqkn(
+                            (vx, vy), *coord, piece.color
+                        ):
+                            piece.add_move((vx, vy))
+
+                        else:
+                            break
 
     def parse_chess_coord(self, s: str) -> tuple[int, int]:
         """Turns Chess Coordinates (A1-H8) to 2d list coordinates"""
@@ -179,12 +203,13 @@ class Game:
         return x, y
 
     # DEBUG FUNCTIONS
-    def debug_prt_current_mvs(self):
-        """prints the currents possible moves"""
-        for row in self.board.board:
-            for item in row:
-                if item:
-                    print(f"{item} - {item.moves_current}")
+
+    def debug_print_all_mvs(self):
+        if not self.debug:
+            return
+        pieces_and_coords = self.board.where_is_all()
+        for coord, piece in pieces_and_coords:
+            print(f"{coord}, {piece.type}, {piece.moves_current}")
 
 
 def get_layout(file_name) -> list[list[str]]:

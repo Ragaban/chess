@@ -23,7 +23,7 @@ class ChessPiece:
         self.type: str = type
         self.color: str = color
         if type == "Pawn":
-            self.set_pawn_attr_direction(color)
+            self.set_pawn_direction(color)
         self.moves_current = []
         self.has_moved = False
         self.symbol = ascii_map[color][type]
@@ -36,14 +36,14 @@ class ChessPiece:
     #         return f"{self.color[0].lower()}{self.type[0].upper()}"
     #     return f"{self.color[0].lower()}{self.type[1].upper()}"
 
-    def set_pawn_attr_direction(self, color):
-        if color.capitalize() == "White":
+    def set_pawn_direction(self, color):
+        if color.lower() == "white":
             self.direction = -1
         else:
             self.direction = 1
 
-    def add_current_moves(self, m: list):
-        self.moves_current += m
+    def add_move(self, m):
+        self.moves_current.append(m)
 
     def del_current_moves(self):
         self.moves_current = []
